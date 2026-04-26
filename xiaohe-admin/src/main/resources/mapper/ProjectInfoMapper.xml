@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaohe.web.mapper.ProjectInfoMapper">
+
+    <resultMap type="com.xiaohe.web.domain.Entity.ProjectInfo" id="ProjectInfoResult">
+        <result property="projectId"    column="project_id"    />
+        <result property="projectName"    column="project_name"    />
+        <result property="projectType"    column="project_type"    />
+        <result property="projectContent"    column="project_content"    />
+        <result property="projectClientSide"    column="project_client_side"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="technologyId"    column="technology_id"    />
+        <result property="projectStartTime"    column="project_start_time"    />
+        <result property="projectEndTime"    column="project_end_time"    />
+        <result property="projectScreenshot"    column="project_screenshot"    />
+        <result property="projectBackground"    column="project_background"    />
+        <result property="projectResponsibilities"    column="project_responsibilities"    />
+    </resultMap>
+
+    <sql id="selectProjectInfoVo">
+        select project_id, project_name, project_type, project_content, project_client_side, create_time, create_by, update_time, update_by,technology_id,project_end_time,project_start_time from project_info
+    </sql>
+
+    <select id="selectProjectInfoList" parameterType="com.xiaohe.web.domain.Entity.ProjectInfo" resultMap="ProjectInfoResult">
+        <include refid="selectProjectInfoVo"/>
+        <where>
+            <if test="projectName != null  and projectName != ''"> and project_name like concat('%', #{projectName}, '%')</if>
+            <if test="projectType != null  and projectType != ''"> and project_type = #{projectType}</if>
+            <if test="projectContent != null  and projectContent != ''"> and project_content = #{projectContent}</if>
+            <if test="projectClientSide != null  and projectClientSide != ''"> and project_client_side = #{projectClientSide}</if>
+            <if test="technologyId != null  and technologyId != ''"> and technology_id = #{technologyId}</if>
+            <if test="projectStartTime != null  and projectStartTime != ''"> and project_start_time = #{projectStartTime}</if>
+            <if test="projectEndTime != null  and projectEndTime != ''"> and project_end_time = #{projectEndTime}</if>
+        </where>
+    </select>
+
+    <select id="selectProjectInfoByProjectId" parameterType="Long" resultMap="ProjectInfoResult">
+        <include refid="selectProjectInfoVo"/>
+        where project_id = #{projectId}
+    </select>
+
+    <insert id="insertProjectInfo" parameterType="com.xiaohe.web.domain.Entity.ProjectInfo" useGeneratedKeys="true" keyProperty="projectId">
+        insert into project_info
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="projectName != null">project_name,</if>
+            <if test="projectType != null">project_type,</if>
+            <if test="projectContent != null">project_content,</if>
+            <if test="projectClientSide != null">project_client_side,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="technologyId != null">technology_id,</if>
+            <if test="projectStartTime != null">project_start_time,</if>
+            <if test="projectEndTime != null">project_end_time ,</if>
+
+
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="projectName != null">#{projectName},</if>
+            <if test="projectType != null">#{projectType},</if>
+            <if test="projectContent != null">#{projectContent},</if>
+            <if test="projectClientSide != null">#{projectClientSide},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="technologyId != null">#{technologyId},</if>
+            <if test="projectStartTime != null">#{projectStartTime},</if>
+            <if test="projectEndTime != null">#{projectEndTime},</if>
+        </trim>
+    </insert>
+
+    <update id="updateProjectInfo" parameterType="com.xiaohe.web.domain.Entity.ProjectInfo">
+        update project_info
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="projectName != null">project_name = #{projectName},</if>
+            <if test="projectType != null">project_type = #{projectType},</if>
+            <if test="projectContent != null">project_content = #{projectContent},</if>
+            <if test="projectClientSide != null">project_client_side = #{projectClientSide},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="technologyId != null">technology_id=#{technologyId},</if>
+            <if test="projectStartTime != null">project_start_time = #{projectStartTime},</if>
+            <if test="projectEndTime != null">project_end_time = #{projectEndTime},</if>
+        </trim>
+        where project_id = #{projectId}
+    </update>
+
+    <delete id="deleteProjectInfoByProjectId" parameterType="Long">
+        delete from project_info where project_id = #{projectId}
+    </delete>
+
+    <delete id="deleteProjectInfoByProjectIds" parameterType="String">
+        delete from project_info where project_id in
+        <foreach item="projectId" collection="array" open="(" separator="," close=")">
+            #{projectId}
+        </foreach>
+    </delete>
+</mapper>

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaohe.web.mapper.SysProjectMapper">
+    <select id="selProjectByUserId" resultType="com.xiaohe.web.domain.Entity.SysProject">
+        SELECT *
+        FROM sys_project
+        WHERE project_head_id = #{userId};
+    </select>
+
+    <select id="selProjectUserId" resultType="com.xiaohe.web.domain.Entity.SysProject">
+
+
+        SELECT *
+        FROM sys_project
+        WHERE user_ids IN ( ${userId})
+    </select>
+
+
+
+
+    <select id="selectListQuery" resultType="com.xiaohe.web.domain.Dto.SysProjectDto">
+        SELECT t1.project_name,
+        t1.project_id,
+        t1.create_time,
+        t1.create_by,
+        t1.update_by,
+        t1.update_time,
+        t2.name as projectHeadName
+
+        FROM sys_project t1
+        left join sys_worker_user t2 on t2.id = t1.project_head_id
+
+        <where>
+            <if test="sysProjectVo.projectId != null  and sysProjectVo.projectId != ''">
+                and
+                t1.project_id = #{sysProjectVo.projectId}
+            </if>
+
+            <if test="sysProjectVo.createTime != null  and sysProjectVo.endTime != null">
+                and
+                t1.create_time BETWEEN #{sysProjectVo.createTime} and #{sysProjectVo.endTime}
+            </if>
+        </where>
+
+        order by t1.create_time desc
+    </select>
+
+
+
+
+    <select id="selectView" resultType="com.xiaohe.web.domain.Entity.SysProject" parameterType="Long">
+        SELECT t1.project_name,
+               t1.project_id,
+               t1.create_time,
+               t1.create_by,
+               t1.update_by,
+               t1.user_ids,
+               t1.project_head_id,
+               t1.update_time
+        FROM sys_project t1
+                 left join sys_worker_user t2 on t2.id = t1.project_head_id
+        WHERE t1.project_id = #{projectId}
+        order by t1.create_time desc
+    </select>
+
+
+    <select id="selUserByProjectId" resultType="com.xiaohe.web.domain.Entity.SysWorkerUser" parameterType="Long">
+        SELECT *
+        FROM sys_worker_user
+        WHERE id IN ( #{userIds})
+    </select>
+</mapper>

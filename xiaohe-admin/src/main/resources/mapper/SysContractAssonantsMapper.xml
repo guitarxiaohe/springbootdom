@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaohe.web.mapper.SysContractAssonantsMapper">
+
+    <select id="queryList" resultType="com.xiaohe.web.domain.Dto.SysContractAssonantsDto">
+        SELECT t1.id,
+        t1.project_id,
+        t1.man_hour,
+        t1.examine_state,
+        t1.examine_remark,
+        t1.examine_by,
+        t1.examine_time,
+        t1.create_time,
+        t1.create_by,
+        t1.update_by,
+        t1.update_time,
+        t3.project_name as projectName
+
+
+        FROM sys_contract_assounts t1
+        left join sys_contract t2 on t2.id = #{sysContractAssonantsVo.contractId}
+
+        left join sys_project t3 on t3.project_id = t2.project_id
+
+        <where>
+            <if test="sysContractAssonantsVo.projectId != null  and sysContractAssonantsVo.projectId != ''">
+                and
+                t1.project_id = #{sysContractAssonantsVo.projectId}
+            </if>
+            <if test="sysContractAssonantsVo.createTime != null  and sysContractAssonantsVo.endTime != null">
+                and
+                t1.create_time BETWEEN #{sysContractAssonantsVo.createTime} and #{sysContractAssonantsVo.endTime}
+            </if>
+        </where>
+        order by t1.create_time desc
+    </select>
+
+</mapper>

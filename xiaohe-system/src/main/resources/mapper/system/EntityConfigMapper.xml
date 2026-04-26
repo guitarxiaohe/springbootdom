@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaohe.system.mapper.EntityConfigMapper">
+
+    <resultMap type="EntityConfig" id="EntityConfigResult">
+        <id property="id" column="id"/>
+        <result property="entityKey" column="entity_key"/>
+        <result property="entityName" column="entity_name"/>
+        <result property="tableName" column="table_name"/>
+        <result property="description" column="description"/>
+        <result property="sort" column="sort"/>
+        <result property="isVisible" column="is_visible"/>
+        <result property="createdBy" column="created_by"/>
+        <result property="createdTime" column="created_time"/>
+        <result property="updatedBy" column="updated_by"/>
+        <result property="updatedTime" column="updated_time"/>
+    </resultMap>
+
+    <select id="selectEntityConfigByEntityKey" parameterType="String" resultMap="EntityConfigResult">
+        select id, entity_key, entity_name, table_name, description, sort, is_visible,
+               created_by, created_time, updated_by, updated_time
+        from entity_config
+        where entity_key = #{entityKey}
+        limit 1
+    </select>
+
+</mapper>

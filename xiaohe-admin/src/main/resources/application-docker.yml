@@ -1,0 +1,23 @@
+# Docker / docker-compose 默认配置；生产请通过环境变量覆盖 DB_*、REDIS_*、XIAOHE_* 等
+spring:
+  devtools:
+    restart:
+      enabled: false
+  redis:
+    host: ${REDIS_HOST:host.docker.internal}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+  datasource:
+    druid:
+      master:
+        url: jdbc:mysql://${DB_HOST:host.docker.internal}:${DB_PORT:3306}/${DB_NAME:xiaohe}?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+        username: ${DB_USERNAME:root}
+        password: ${DB_PASSWORD:}
+
+xiaohe:
+  profile: ${XIAOHE_PROFILE:/data/upload}
+  file_url: ${XIAOHE_FILE_URL:http://localhost:8002}
+
+logging:
+  level:
+    com.xiaohe: info

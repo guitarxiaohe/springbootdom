@@ -1,0 +1,12 @@
+**/target/
+!xiaohe-admin/target/
+xiaohe-admin/target/*
+!xiaohe-admin/target/xiaohe-admin.jar
+.git
+.gitignore
+.idea
+*.iml
+.DS_Store
+**/logs/
+**/*.log
+docker/.env.local

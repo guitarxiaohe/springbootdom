@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaohe.web.mapper.ProjectTypeMapper">
+
+    <resultMap type="ProjectType" id="ProjectTypeResult">
+        <result property="projectTypeId"    column="project_type_id"    />
+        <result property="projectTypeName"    column="project_type_name"    />
+        <result property="projectType"    column="project_type"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="updateBy"    column="update_by"    />
+    </resultMap>
+
+    <sql id="selectProjectTypeVo">
+        select project_type_id, project_type_name, project_type, create_time, create_by, update_time, update_by from project_type
+    </sql>
+
+    <select id="selectProjectTypeList" parameterType="ProjectType" resultMap="ProjectTypeResult">
+        <include refid="selectProjectTypeVo"/>
+        <where>
+            <if test="projectTypeName != null  and projectTypeName != ''"> and project_type_name like concat('%', #{projectTypeName}, '%')</if>
+            <if test="projectType != null  and projectType != ''"> and project_type = #{projectType}</if>
+
+        </where>
+    </select>
+
+    <select id="selectProjectTypeByProjectTypeId" parameterType="Long" resultMap="ProjectTypeResult">
+        <include refid="selectProjectTypeVo"/>
+        where project_type_id = #{projectTypeId}
+    </select>
+
+    <insert id="insertProjectType" parameterType="ProjectType" useGeneratedKeys="true" keyProperty="projectTypeId">
+        insert into project_type
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="projectTypeName != null">project_type_name,</if>
+            <if test="projectType != null">project_type,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="updateBy != null">update_by,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="projectTypeName != null">#{projectTypeName},</if>
+            <if test="projectType != null">#{projectType},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+         </trim>
+    </insert>
+
+    <update id="updateProjectType" parameterType="ProjectType">
+        update project_type
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="projectTypeName != null">project_type_name = #{projectTypeName},</if>
+            <if test="projectType != null">project_type = #{projectType},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+        </trim>
+        where project_type_id = #{projectTypeId}
+    </update>
+
+    <delete id="deleteProjectTypeByProjectTypeId" parameterType="Long">
+        delete from project_type where project_type_id = #{projectTypeId}
+    </delete>
+
+    <delete id="deleteProjectTypeByProjectTypeIds" parameterType="String">
+        delete from project_type where project_type_id in
+        <foreach item="projectTypeId" collection="array" open="(" separator="," close=")">
+            #{projectTypeId}
+        </foreach>
+    </delete>
+</mapper>

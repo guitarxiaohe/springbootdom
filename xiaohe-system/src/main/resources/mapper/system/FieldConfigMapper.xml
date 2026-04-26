@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaohe.system.mapper.FieldConfigMapper">
+
+    <resultMap type="FieldConfig" id="FieldConfigResult">
+        <id property="id" column="id"/>
+        <result property="entityKey" column="entity_key"/>
+        <result property="fieldKey" column="field_key"/>
+        <result property="fieldName" column="field_name"/>
+        <result property="fieldType" column="field_type"/>
+        <result property="dictCode" column="dict_code"/>
+        <result property="selectEntityKey" column="select_entity_key"/>
+        <result property="sort" column="sort"/>
+        <result property="isFuzzySearch" column="is_fuzzy_search"/>
+        <result property="isVisible" column="is_visible"/>
+        <result property="createdBy" column="created_by"/>
+        <result property="createdTime" column="created_time"/>
+        <result property="updatedBy" column="updated_by"/>
+        <result property="updatedTime" column="updated_time"/>
+        <result property="fixed" column="fixed"/>
+    </resultMap>
+
+    <sql id="selectFieldConfigVo">
+        select id, entity_key, field_key, field_name, field_type, dict_code, select_entity_key, sort, is_fuzzy_search, is_visible, created_by, created_time, updated_by, updated_time,fixed
+        from field_config
+    </sql>
+
+    <select id="selectFieldConfigById" parameterType="Long" resultMap="FieldConfigResult">
+        <include refid="selectFieldConfigVo"/>
+        where id = #{id}
+    </select>
+
+    <select id="selectFieldConfigList" parameterType="FieldConfig" resultMap="FieldConfigResult">
+        <include refid="selectFieldConfigVo"/>
+        <where>
+            <if test="entityKey != null and entityKey != ''">
+                AND entity_key = #{entityKey}
+            </if>
+            <if test="fieldKey != null and fieldKey != ''">
+                AND field_key like concat('%', #{fieldKey}, '%')
+            </if>
+            <if test="fieldName != null and fieldName != ''">
+                AND field_name like concat('%', #{fieldName}, '%')
+            </if>
+            <if test="dictCode != null and dictCode != ''">
+                AND dict_code = #{dictCode}
+            </if>
+            <if test="isVisible != null">
+                AND is_visible = #{isVisible}
+            </if>
+        </where>
+        order by entity_key, sort
+    </select>
+
+    <select id="selectFieldConfigByEntityKey" parameterType="String" resultMap="FieldConfigResult">
+        <include refid="selectFieldConfigVo"/>
+        where entity_key = #{entityKey}
+        order by sort
+    </select>
+
+    <select id="selectFieldConfigByEntityKeyAndFieldKey" resultMap="FieldConfigResult">
+        <include refid="selectFieldConfigVo"/>
+        where entity_key = #{entityKey} and field_key = #{fieldKey}
+    </select>
+
+    <select id="countFieldConfigByEntityKeyAndFieldKey" resultType="int">
+        select count(1) from field_config
+        where entity_key = #{entityKey} and field_key = #{fieldKey}
+    </select>
+
+    <select id="selectFieldFilterMetaByEntityKey" parameterType="String" resultType="java.util.HashMap">
+        select field_key as fieldKey, is_fuzzy_search as isFuzzySearch, select_entity_key as selectEntityKey
+        from field_config
+        where entity_key = #{entityKey}
+        order by sort
+    </select>
+
+    <select id="selectFieldKeysByEntityKey" parameterType="String" resultType="String">
+        select field_key
+        from field_config
+        where entity_key = #{entityKey}
+        order by sort
+    </select>
+
+    <insert id="insertFieldConfig" parameterType="FieldConfig" useGeneratedKeys="true" keyProperty="id">
+        insert into field_config (
+            <if test="entityKey != null and entityKey != ''">entity_key,</if>
+            <if test="fieldKey != null and fieldKey != ''">field_key,</if>
+            <if test="fieldName != null and fieldName != ''">field_name,</if>
+            <if test="fieldType != null and fieldType != ''">field_type,</if>
+            <if test="dictCode != null and dictCode != ''">dict_code,</if>
+            <if test="selectEntityKey != null and selectEntityKey != ''">select_entity_key,</if>
+            <if test="sort != null">sort,</if>
+            <if test="isFuzzySearch != null">is_fuzzy_search,</if>
+            <if test="isVisible != null">is_visible,</if>
+            <if test="createdBy != null">created_by,</if>
+            <if test="createdTime != null">created_time,</if>
+            updated_time
+        )values(
+            <if test="entityKey != null and entityKey != ''">#{entityKey},</if>
+            <if test="fieldKey != null and fieldKey != ''">#{fieldKey},</if>
+            <if test="fieldName != null and fieldName != ''">#{fieldName},</if>
+            <if test="fieldType != null and fieldType != ''">#{fieldType},</if>
+            <if test="dictCode != null and dictCode != ''">#{dictCode},</if>
+            <if test="selectEntityKey != null and selectEntityKey != ''">#{selectEntityKey},</if>
+            <if test="sort != null">#{sort},</if>
+            <if test="isFuzzySearch != null">#{isFuzzySearch},</if>
+            <if test="isVisible != null">#{isVisible},</if>
+            <if test="createdBy != null">#{createdBy},</if>
+            <if test="createdTime != null">#{createdTime},</if>
+            UNIX_TIMESTAMP() * 1000
+        )
+    </insert>
+
+    <update id="updateFieldConfig" parameterType="FieldConfig">
+        update field_config
+        <set>
+            <if test="entityKey != null and entityKey != ''">entity_key = #{entityKey},</if>
+            <if test="fieldKey != null and fieldKey != ''">field_key = #{fieldKey},</if>
+            <if test="fieldName != null and fieldName != ''">field_name = #{fieldName},</if>
+            <if test="fieldType != null">field_type = #{fieldType},</if>
+            <if test="dictCode != null">dict_code = #{dictCode},</if>
+            <if test="selectEntityKey != null">select_entity_key = #{selectEntityKey},</if>
+            <if test="sort != null">sort = #{sort},</if>
+            <if test="isFuzzySearch != null">is_fuzzy_search = #{isFuzzySearch},</if>
+            <if test="isVisible != null">is_visible = #{isVisible},</if>
+            <if test="updatedBy != null">updated_by = #{updatedBy},</if>
+            updated_time = UNIX_TIMESTAMP() * 1000
+        </set>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteFieldConfigById" parameterType="Long">
+        delete from field_config where id = #{id}
+    </delete>
+
+    <delete id="deleteFieldConfigByIds" parameterType="Long">
+        delete from field_config where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <update id="updateSortBatch" parameterType="java.util.List">
+        update field_config set sort = case id
+        <foreach collection="list" item="item">
+            when #{item.id} then #{item.sort}
+        </foreach>
+        end, updated_time = UNIX_TIMESTAMP() * 1000 where id in
+        <foreach collection="list" item="item" open="(" separator="," close=")">
+            #{item.id}
+        </foreach>
+    </update>
+
+    <select id="countFieldConfigByEntityKeyAndIds" resultType="int">
+        select count(1)
+        from field_config
+        where entity_key = #{entityKey}
+          and id in
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+
+</mapper>

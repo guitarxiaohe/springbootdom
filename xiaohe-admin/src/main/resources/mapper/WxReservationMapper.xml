@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaohe.web.mapper.WxReservationMapper">
+
+    <resultMap type="com.xiaohe.web.domain.WxReservationVo" id="WxReservationResult">
+        <result property="id"    column="id"    />
+        <result property="startTime"    column="start_time"    />
+        <result property="endTime"    column="end_time"    />
+        <result property="reservationName"    column="reservation_name"    />
+        <result property="contactInformation"    column="contact_information"    />
+        <result property="reason"    column="reason"    />
+        <result property="receptionById"    column="reception_by_id"    />
+        <result property="state"    column="state"    />
+        <result property="openId"    column="open_id"    />
+        <result property="phone"    column="phone"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+
+    </resultMap>
+
+    <sql id="selectReservationVo">
+        select id, start_time, end_time, reservation_name, contact_information, reason, reception_by_id,state,open_id,phone,create_by,create_time from reservation order by create_time desc
+    </sql>
+
+
+    <insert id="insertWxReservation" parameterType="com.xiaohe.web.domain.WxReservationVo" useGeneratedKeys="true" keyProperty="id">
+        insert into reservation
+         (<if test="startTime != null">
+        start_time,
+    </if>
+        <if test="endTime != null">
+            end_time,
+        </if>
+        <if test="sex != null">
+            sex,
+        </if>
+        <if test="reservationName != null">
+            reservation_name,
+        </if>
+        <if test="contactInformation != null">
+            contact_information,
+        </if>
+        <if test="reason != null">
+            reason,
+        </if>
+        <if test="receptionById != null">
+            reception_by_id,
+        </if>
+        <if test="state != null">
+            state,
+        </if>
+        <if test="openId != null">
+            open_id,
+        </if>
+        <if test="phone != null">
+            phone,
+        </if>
+        <if test="createBy != null">
+            create_by,
+        </if>
+
+        <if test="receptionOpenId != null">
+            reception_open_id,
+        </if>
+
+        create_time
+        )
+        values (
+        <if test="startTime != null">
+            #{startTime},
+        </if>
+        <if test="endTime != null">
+            #{endTime},
+        </if>
+        <if test="sex != null">
+            #{sex},
+        </if>
+
+
+        <if test="reservationName != null">
+            #{reservationName},
+        </if>
+        <if test="contactInformation != null">
+            #{contactInformation},
+        </if>
+        <if test="reason != null">
+            #{reason},
+        </if>
+        <if test="receptionById != null">
+            #{receptionById},
+        </if>
+        <if test="state != null">
+            #{state},
+        </if>
+        <if test="openId != null">
+            #{openId},
+        </if>
+        <if test="phone != null">
+            #{phone},
+        </if>
+        <if test="createBy != null">
+            #{createBy},
+        </if>
+
+
+        <if test="receptionOpenId != null">
+            #{receptionOpenId},
+        </if>
+        sysdate()
+
+        )
+    </insert>
+
+
+</mapper>

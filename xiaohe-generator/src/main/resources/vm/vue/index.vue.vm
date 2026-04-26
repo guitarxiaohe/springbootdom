@@ -1,0 +1,537 @@
+import {
+add${BusinessName},
+del${BusinessName},
+get${BusinessName},
+list${BusinessName},
+update${BusinessName}
+} from '@/api/${moduleName}/${businessName}';
+import { XHbutton, XHoperate, XHselectForm, XHtable } from '@/components/index';
+import { msg } from '@/utils/funcomm';
+import {
+DeleteOutlined,
+EditOutlined,
+PlusOutlined,
+} from '@ant-design/icons';
+import { Card, Form, Input, Modal, Select, Space, TreeSelect, Tag } from 'antd';
+#foreach ($column in $columns)
+    #if($column.htmlType == "textarea")
+    const { TextArea } = Input;
+        #break
+    #end
+#end
+import dayjs from 'dayjs';
+import { useEffect, useState } from 'react';
+
+const { confirm } = Modal;
+
+
+// 搜索表单配置
+const SEARCH_FORM_CONFIG = [
+#foreach($column in $columns)
+    #if($column.query)
+        #set($dictType=$column.dictType)
+        #set($parentheseIndex=$column.columnComment.indexOf("（"))
+        #if($parentheseIndex != -1)
+            #set($comment=$column.columnComment.substring(0, $parentheseIndex))
+        #else
+            #set($comment=$column.columnComment)
+        #end
+        #if($column.htmlType == "input")
+        {
+        label: '${comment}',
+        model: '${column.javaField}',
+        type: '输入框',
+        placeholder: '请输入${comment}',
+        },
+        #elseif(($column.htmlType == "select" || $column.htmlType == "radio") && "" != $dictType)
+        {
+        label: '${comment}',
+        model: '${column.javaField}',
+        type: '选择器',
+        placeholder: '请选择${comment}',
+        dictType: '${dictType}',
+        },
+        #elseif($column.htmlType == "datetime" && $column.queryType != "BETWEEN")
+        {
+        label: '${comment}',
+        model: '${column.javaField}',
+        type: '日期选择器',
+        placeholder: '请选择${comment}',
+        },
+        #elseif($column.htmlType == "datetime" && $column.queryType == "BETWEEN")
+        {
+        label: '${comment}',
+        model: ['begin${AttrName}', 'end${AttrName}'],
+        type: '范围日期选择器',
+        placeholder: ['开始日期', '结束日期'],
+        },
+        #end
+    #end
+#end
+];
+
+// 获取表格操作按钮配置
+const getTableOperations = (handlers) => [
+{
+label: '修改',
+icon: <EditOutlined />,
+emit: handlers.handleUpdate,
+},
+{
+label: '新增',
+icon: <PlusOutlined />,
+emit: handlers.handleAdd,
+},
+{
+label: '删除',
+icon: <DeleteOutlined />,
+danger: true,
+emit: handlers.handleDelete,
+},
+];
+
+// 获取顶部按钮配置
+const getTopButtons = (handlers, disabled) => [
+{
+type: 'primary',
+icon: <PlusOutlined />,
+emit: handlers.handleAdd,
+text: '新增',
+},
+{
+danger: true,
+icon: <DeleteOutlined />,
+emit: handlers.handleBatchDelete,
+text: '批量删除',
+disabled: disabled.batchDelete,
+},
+];
+
+const ${BusinessName}Page = () => {
+const [loading, setLoading] = useState(false);
+const [dataSource, setDataSource] = useState([]);
+const [total, setTotal] = useState(0);
+const [searchParams, setSearchParams] = useState({});
+const [pagination, setPagination] = useState({
+pageNum: 1,
+pageSize: 10,
+});
+const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+const [selectedRows, setSelectedRows] = useState([]);
+
+// 表单Modal
+const [formVisible, setFormVisible] = useState(false);
+const [formTitle, setFormTitle] = useState('');
+const [formData, setFormData] = useState({});
+const [formLoading, setFormLoading] = useState(false);
+const [form] = Form.useForm();
+
+// 树形数据
+const [treeData, setTreeData] = useState([]);
+
+// 表单验证规则
+const formRules = {
+#foreach ($column in $columns)
+    #if($column.required)
+        #set($parentheseIndex=$column.columnComment.indexOf("（"))
+        #if($parentheseIndex != -1)
+            #set($comment=$column.columnComment.substring(0, $parentheseIndex))
+        #else
+            #set($comment=$column.columnComment)
+        #end
+        ${column.javaField}: [
+    { required: true, message: '${comment}不能为空' },
+    ],
+    #end
+#end
+};
+
+// 表格列配置
+const columns = [
+{
+title: '序号',
+width: '60px',
+align: 'center',
+render: (_, __, index) => (pagination.pageNum - 1) * pagination.pageSize + index + 1,
+},
+#foreach($column in $columns)
+    #set($javaField=$column.javaField)
+    #set($parentheseIndex=$column.columnComment.indexOf("（"))
+    #if($parentheseIndex != -1)
+        #set($comment=$column.columnComment.substring(0, $parentheseIndex))
+    #else
+        #set($comment=$column.columnComment)
+    #end
+    #if($column.pk)
+    #elseif($column.list && $column.htmlType == "datetime")
+    {
+    title: '${comment}',
+    dataIndex: '${javaField}',
+    key: '${javaField}',
+    width: '160px',
+    render: (time) => (time ? dayjs(time).format('YYYY-MM-DD HH:mm:ss') : '-'),
+    },
+    #elseif($column.list && "" != $column.dictType)
+    {
+    title: '${comment}',
+    dataIndex: '${javaField}',
+    key: '${javaField}',
+    width: '120px',
+    render: (value) => <Tag color="blue">{value}</Tag>,
+    },
+    #elseif($column.list && "" != $javaField)
+        #if(${foreach.index} == 1)
+        {
+        title: '${comment}',
+        dataIndex: '${javaField}',
+        key: '${javaField}',
+        },
+        #else
+        {
+        title: '${comment}',
+        dataIndex: '${javaField}',
+        key: '${javaField}',
+        width: '120px',
+        },
+        #end
+    #end
+#end
+{
+title: '操作',
+key: 'action',
+width: '240px',
+fixed: 'right',
+align: 'center',
+render: (record) => {
+const operations = getTableOperations({
+handleUpdate: () => handleUpdate(record),
+handleAdd: () => handleAdd(record),
+handleDelete: () => handleDelete(record),
+});
+return <XHoperate list={operations} />;
+},
+},
+];
+
+// 获取列表数据
+const getList = async (customParams = null) => {
+setLoading(true);
+const params = customParams !== null ? customParams : searchParams;
+try {
+const response = await list${BusinessName}({
+...params,
+...pagination,
+});
+const treeData = buildTree(response.rows || []);
+setDataSource(treeData);
+setTotal(response.total || 0);
+} catch (error) {
+console.error('获取列表失败:', error);
+setDataSource([]);
+setTotal(0);
+} finally {
+setLoading(false);
+}
+};
+
+// 构建树形数据
+const buildTree = (data, parentId = '0') => {
+return data
+.filter((item) => item.${treeParentCode} === parentId)
+.map((item) => ({
+...item,
+children: buildTree(data, item.${treeCode}),
+}));
+};
+
+// 获取树形选择数据
+const getTreeData = async () => {
+try {
+const response = await list${BusinessName}();
+const treeOptions = buildTreeOptions(response.rows || []);
+setTreeData(treeOptions);
+} catch (error) {
+console.error('获取树形数据失败:', error);
+}
+};
+
+// 构建树形选择选项
+const buildTreeOptions = (data, parentId = '0') => {
+return data
+.filter((item) => item.${treeParentCode} === parentId)
+.map((item) => ({
+title: item.${treeName},
+value: item.${treeCode},
+key: item.${treeCode},
+children: buildTreeOptions(data, item.${treeCode}),
+}));
+};
+
+// 新增
+const handleAdd = (record = null) => {
+const initialData = {
+${treeParentCode}: record ? record.${treeCode} : '0',
+};
+setFormData(initialData);
+form.setFieldsValue(initialData);
+setFormTitle('新增${functionName}');
+setFormVisible(true);
+getTreeData();
+};
+
+// 修改
+const handleUpdate = async (record) => {
+try {
+setFormLoading(true);
+const response = await get${BusinessName}(record.${pkColumn.javaField});
+const formValues = { ...response.data };
+#foreach ($column in $columns)
+    #if($column.htmlType == "checkbox")
+    if (response.data.${column.javaField}) {
+    formValues.${column.javaField} = response.data.${column.javaField}.split(',');
+    }
+    #end
+#end
+setFormData(formValues);
+form.setFieldsValue(formValues);
+setFormTitle('修改${functionName}');
+setFormVisible(true);
+getTreeData();
+} catch (error) {
+console.error('获取详情失败:', error);
+} finally {
+setFormLoading(false);
+}
+};
+
+// 删除
+const handleDelete = (record) => {
+confirm({
+title: '删除确认',
+content: `确定要删除${functionName} "` + record.${pkColumn.javaField} + `" 吗？`,
+okText: '确定',
+okType: 'danger',
+cancelText: '取消',
+onOk: async () => {
+try {
+await del${BusinessName}(record.${pkColumn.javaField});
+msg.successMsg('删除成功');
+getList(null);
+} catch (error) {
+console.error('删除失败:', error);
+}
+},
+});
+};
+
+// 批量删除
+const handleBatchDelete = () => {
+if (selectedRowKeys.length === 0) {
+msg.warningMsg('请选择要删除的数据');
+return;
+}
+confirm({
+title: '批量删除确认',
+content: `确定要删除选中的 ` + selectedRowKeys.length + ` 条数据吗？`,
+okText: '确定',
+okType: 'danger',
+cancelText: '取消',
+onOk: async () => {
+try {
+await del${BusinessName}(selectedRowKeys.join(','));
+msg.successMsg('删除成功');
+setSelectedRowKeys([]);
+setSelectedRows([]);
+getList(null);
+} catch (error) {
+console.error('删除失败:', error);
+}
+},
+});
+};
+
+// 提交表单
+const handleSubmit = async () => {
+try {
+setFormLoading(true);
+const values = await form.validateFields();
+
+const submitData = { ...formData, ...values };
+#foreach ($column in $columns)
+    #if($column.htmlType == "checkbox")
+    if (Array.isArray(submitData.${column.javaField})) {
+    submitData.${column.javaField} = submitData.${column.javaField}.join(',');
+    }
+    #end
+#end
+
+if (submitData.${pkColumn.javaField}) {
+await update${BusinessName}(submitData);
+msg.successMsg('修改成功');
+} else {
+await add${BusinessName}(submitData);
+msg.successMsg('新增成功');
+}
+
+setFormVisible(false);
+getList(null);
+} catch (error) {
+console.error('提交失败:', error);
+} finally {
+setFormLoading(false);
+}
+};
+
+// 重置表单
+const resetForm = () => {
+setFormData({});
+form.resetFields();
+};
+
+// 页面加载时获取数据
+useEffect(() => {
+getList(null);
+// eslint-disable-next-line react-hooks/exhaustive-deps
+}, [pagination.pageNum, pagination.pageSize]);
+
+return (
+<div className="${businessName}-page">
+  <Card
+      title={
+  <Space>
+    <span>${functionName}管理</span>
+  </Space>
+  }
+  bordered={false}
+  >
+  {/* 搜索表单 */}
+  <XHselectForm
+      list={SEARCH_FORM_CONFIG}
+      selectSubmit={(values) => {
+  setSearchParams(values);
+  setPagination({ pageNum: 1, pageSize: pagination.pageSize });
+  getList(values);
+  }}
+  />
+
+  {/* 操作按钮 */}
+  <div style={{ marginBottom: '16px' }}>
+  <XHbutton
+      list={getTopButtons(
+      {
+      handleAdd: () => handleAdd(),
+    handleBatchDelete,
+    },
+    {
+    batchDelete: selectedRowKeys.length === 0,
+    }
+    )}
+    />
+</div>
+
+{/* 表格 */}
+<XHtable
+    index={false}
+    columns={columns}
+    dataSource={dataSource}
+    loading={loading}
+    keyId="${pkColumn.javaField}"
+    total={total}
+    pagination={(paginationParams) => {
+setPagination(paginationParams);
+getList({
+...searchParams,
+...paginationParams,
+});
+}}
+isSel={true}
+rowKeys={selectedRowKeys}
+onChange={({ keys, list }) => {
+setSelectedRowKeys(keys);
+setSelectedRows(list);
+}}
+isTree={true}
+scroll={{ x: 1200 }}
+/>
+</Card>
+
+{/* 表单Modal */}
+<Modal
+    title={formTitle}
+    open={formVisible}
+    onOk={handleSubmit}
+    onCancel={() => {
+setFormVisible(false);
+resetForm();
+}}
+width={600}
+confirmLoading={formLoading}
+okText="确定"
+cancelText="取消"
+>
+<Form
+    layout="vertical"
+    form={form}
+>
+    #foreach($column in $columns)
+        #set($field=$column.javaField)
+        #if($column.insert && !$column.pk)
+            #if(($column.usableColumn) || (!$column.superColumn))
+                #set($parentheseIndex=$column.columnComment.indexOf("（"))
+                #if($parentheseIndex != -1)
+                    #set($comment=$column.columnComment.substring(0, $parentheseIndex))
+                #else
+                    #set($comment=$column.columnComment)
+                #end
+                #set($dictType=$column.dictType)
+                #if("" != $treeParentCode && $column.javaField == $treeParentCode)
+                  <Form.Item
+                      label="${comment}"
+                      name="${treeParentCode}"
+                      rules={formRules.${treeParentCode}}
+                  >
+                    <TreeSelect
+                        treeData={treeData}
+                        placeholder="请选择${comment}"
+                        allowClear
+                    />
+                  </Form.Item>
+                #elseif($column.htmlType == "input")
+                  <Form.Item
+                      label="${comment}"
+                      name="${field}"
+                      rules={formRules.${field}}
+                  >
+                    <Input placeholder="请输入${comment}" />
+                  </Form.Item>
+                #elseif($column.htmlType == "select" && "" != $dictType)
+                  <Form.Item
+                      label="${comment}"
+                      name="${field}"
+                      rules={formRules.${field}}
+                  >
+                    <Select placeholder="请选择${comment}">
+                      {/* 字典选项需要根据实际字典接口获取 */}
+                      <Select.Option value="1">选项1</Select.Option>
+                      <Select.Option value="2">选项2</Select.Option>
+                    </Select>
+                  </Form.Item>
+                #elseif($column.htmlType == "textarea")
+                  <Form.Item
+                      label="${comment}"
+                      name="${field}"
+                      rules={formRules.${field}}
+                  >
+                    <TextArea placeholder="请输入${comment}" rows={4} />
+                  </Form.Item>
+                #end
+            #end
+        #end
+    #end
+</Form>
+</Modal>
+</div>
+);
+};
+
+export default ${BusinessName}Page;

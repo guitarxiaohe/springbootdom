@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaohe.web.mapper.SysNoteMapper">
+    
+    <resultMap type="com.xiaohe.web.domain.Entity.SysNote" id="SysNoteResult">
+        <result property="noteId"    column="note_id"    />
+        <result property="parentId"    column="parent_id"    />
+        <result property="categoryId"    column="category_id"    />
+        <result property="noteTitle"    column="note_title"    />
+        <result property="noteContent"    column="note_content"    />
+        <result property="noteType"    column="note_type"    />
+        <result property="noteTags"    column="note_tags"    />
+        <result property="orderNum"    column="order_num"    />
+        <result property="status"    column="status"    />
+        <result property="isPublic"    column="is_public"    />
+        <result property="readCount"    column="read_count"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="remark"    column="remark"    />
+        <result property="categoryName"    column="category_name"    />
+        <result property="parentTitle"    column="parent_title"    />
+    </resultMap>
+
+    <sql id="selectSysNoteVo">
+        select n.note_id, n.parent_id, n.category_id, n.note_title, n.note_content, n.note_type, 
+               n.note_tags, n.order_num, n.status, n.is_public, n.read_count, n.del_flag, 
+               n.create_by, n.create_time, n.update_by, n.update_time, n.remark,
+               c.category_name,
+               p.note_title as parent_title
+        from sys_note n
+        left join sys_note_category c on n.category_id = c.category_id
+        left join sys_note p on n.parent_id = p.note_id
+    </sql>
+
+    <select id="selectSysNoteList" parameterType="com.xiaohe.web.domain.Entity.SysNote" resultMap="SysNoteResult">
+        <include refid="selectSysNoteVo"/>
+        <where>  
+            n.del_flag = '0'
+            <if test="parentId != null "> and n.parent_id = #{parentId}</if>
+            <if test="categoryId != null "> and n.category_id = #{categoryId}</if>
+            <if test="noteTitle != null  and noteTitle != ''"> and n.note_title like concat('%', #{noteTitle}, '%')</if>
+            <if test="noteType != null  and noteType != ''"> and n.note_type = #{noteType}</if>
+            <if test="noteTags != null  and noteTags != ''"> and n.note_tags like concat('%', #{noteTags}, '%')</if>
+            <if test="status != null  and status != ''"> and n.status = #{status}</if>
+            <if test="isPublic != null  and isPublic != ''"> and n.is_public = #{isPublic}</if>
+        </where>
+        order by n.order_num asc, n.create_time desc
+    </select>
+
+    <select id="selectSysNoteTreeList" parameterType="com.xiaohe.web.domain.Entity.SysNote" resultMap="SysNoteResult">
+        <include refid="selectSysNoteVo"/>
+        <where>  
+            n.del_flag = '0'
+            <if test="categoryId != null "> and n.category_id = #{categoryId}</if>
+            <if test="noteTitle != null  and noteTitle != ''"> and n.note_title like concat('%', #{noteTitle}, '%')</if>
+            <if test="noteType != null  and noteType != ''"> and n.note_type = #{noteType}</if>
+            <if test="status != null  and status != ''"> and n.status = #{status}</if>
+            <if test="isPublic != null  and isPublic != ''"> and n.is_public = #{isPublic}</if>
+        </where>
+        order by n.parent_id asc, n.order_num asc, n.create_time desc
+    </select>
+    
+    <select id="selectSysNoteByNoteId" parameterType="Long" resultMap="SysNoteResult">
+        <include refid="selectSysNoteVo"/>
+        where n.note_id = #{noteId}
+    </select>
+
+    <select id="selectChildrenCountByParentId" parameterType="Long" resultType="int">
+        select count(*) from sys_note where parent_id = #{parentId} and del_flag = '0'
+    </select>
+
+    <select id="selectNoteCountByCategoryId" parameterType="Long" resultType="int">
+        select count(*) from sys_note where category_id = #{categoryId} and del_flag = '0'
+    </select>
+        
+    <insert id="insertSysNote" parameterType="com.xiaohe.web.domain.Entity.SysNote" useGeneratedKeys="true" keyProperty="noteId">
+        insert into sys_note
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="parentId != null">parent_id,</if>
+            <if test="categoryId != null">category_id,</if>
+            <if test="noteTitle != null and noteTitle != ''">note_title,</if>
+            <if test="noteContent != null">note_content,</if>
+            <if test="noteType != null">note_type,</if>
+            <if test="noteTags != null">note_tags,</if>
+            <if test="orderNum != null">order_num,</if>
+            <if test="status != null">status,</if>
+            <if test="isPublic != null">is_public,</if>
+            <if test="readCount != null">read_count,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="parentId != null">#{parentId},</if>
+            <if test="categoryId != null">#{categoryId},</if>
+            <if test="noteTitle != null and noteTitle != ''">#{noteTitle},</if>
+            <if test="noteContent != null">#{noteContent},</if>
+            <if test="noteType != null">#{noteType},</if>
+            <if test="noteTags != null">#{noteTags},</if>
+            <if test="orderNum != null">#{orderNum},</if>
+            <if test="status != null">#{status},</if>
+            <if test="isPublic != null">#{isPublic},</if>
+            <if test="readCount != null">#{readCount},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+         </trim>
+    </insert>
+
+    <update id="updateSysNote" parameterType="com.xiaohe.web.domain.Entity.SysNote">
+        update sys_note
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="parentId != null">parent_id = #{parentId},</if>
+            <if test="categoryId != null">category_id = #{categoryId},</if>
+            <if test="noteTitle != null and noteTitle != ''">note_title = #{noteTitle},</if>
+            <if test="noteContent != null">note_content = #{noteContent},</if>
+            <if test="noteType != null">note_type = #{noteType},</if>
+            <if test="noteTags != null">note_tags = #{noteTags},</if>
+            <if test="orderNum != null">order_num = #{orderNum},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="isPublic != null">is_public = #{isPublic},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where note_id = #{noteId}
+    </update>
+
+    <update id="deleteSysNoteByNoteId" parameterType="Long">
+        update sys_note set del_flag = '2' where note_id = #{noteId}
+    </update>
+
+    <update id="deleteSysNoteByNoteIds" parameterType="Long">
+        update sys_note set del_flag = '2' where note_id in
+        <foreach item="noteId" collection="array" open="(" separator="," close=")">
+            #{noteId}
+        </foreach>
+    </update>
+
+    <update id="increaseReadCount" parameterType="Long">
+        update sys_note set read_count = read_count + 1 where note_id = #{noteId}
+    </update>
+</mapper>
+

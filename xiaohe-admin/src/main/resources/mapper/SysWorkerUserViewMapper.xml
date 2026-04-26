@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaohe.web.mapper.SysWorkerUserViewMapper">
+    <resultMap type="com.xiaohe.web.domain.Dto.SysWorkerUserViewDto" id="SysWorkerUserViewRes">
+        <result property="id" column="id"/>
+
+        <result property="workerUserId" column="worker_user_id"/>
+        <result property="name" column="name"/>
+        <result property="livingExpenses" column="living_expenses"/>
+        <result property="lendMoney" column="lend_money"/>
+        <result property="createTime" column="create_time"/>
+        <result property="createBy" column="create_by"/>
+    </resultMap>
+
+    <sql id="SysWorkerUserViewRes">
+        select id, worker_user_id, living_expenses,  lend_money,create_by,create_time
+        from sys_worker_user_view
+    </sql>
+
+    <select id="expenseDetail" resultMap="SysWorkerUserViewRes">
+        select t1.id,
+        t1.worker_user_id,
+        t1.living_expenses,
+        t1.lend_money,
+        t1.create_time,
+        t1.create_by,
+        t1.remark,
+        t2.name
+        from sys_worker_user_view t1
+        left join sys_worker_user t2 on t1.worker_user_id = t2.id
+
+        <where>
+            <if test="workerUserId != null  and workerUserId != ''">
+                and t1.worker_user_id = #{workerUserId}
+            </if>
+
+        </where>
+        order by t1.create_time desc
+    </select>
+
+</mapper>

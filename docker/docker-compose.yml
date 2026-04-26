@@ -1,0 +1,32 @@
+# 仅运行 Java 应用；MySQL、Redis 已在宿主机或其它机器部署时，用 .env 填连接信息
+# Linux 上访问宿主机服务：默认 DB_HOST/REDIS_HOST=host.docker.internal（需下方 extra_hosts）
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: xiaohe-admin:local
+    container_name: xiaohe-app
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${APP_HOST_PORT:-8002}:8002"
+    environment:
+      TZ: Asia/Shanghai
+      SPRING_PROFILES_ACTIVE: druid,docker
+      DB_HOST: ${DB_HOST:-host.docker.internal}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_NAME: ${DB_NAME:-xiaohe}
+      DB_USERNAME: ${DB_USERNAME:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-}
+      REDIS_HOST: ${REDIS_HOST:-host.docker.internal}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      XIAOHE_PROFILE: /data/upload
+      XIAOHE_FILE_URL: ${XIAOHE_FILE_URL:-http://localhost:8002}
+    volumes:
+      - xiaohe-upload:/data/upload
+
+volumes:
+  xiaohe-upload:

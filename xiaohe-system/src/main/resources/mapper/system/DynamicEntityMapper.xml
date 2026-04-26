@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaohe.system.mapper.DynamicEntityMapper">
+
+    <select id="selectEntityRowList" resultType="java.util.LinkedHashMap">
+        select * from ${tableName}
+        <where>
+            <foreach collection="filters" item="item">
+                <choose>
+                    <when test="item.related">
+                        and `${item.column}` in (
+                            select `${item.relatedPkColumn}` from ${item.relatedTableName}
+                            where
+                            <foreach collection="item.relatedColumns" item="relatedColumn" separator=" or ">
+                                `${relatedColumn}` like concat('%', #{item.value}, '%')
+                            </foreach>
+                        )
+                    </when>
+                    <when test="item.fuzzy">
+                        and `${item.column}` like concat('%', #{item.value}, '%')
+                    </when>
+                    <otherwise>
+                        and `${item.column}` = #{item.value}
+                    </otherwise>
+                </choose>
+            </foreach>
+        </where>
+    </select>
+
+    <select id="selectEntityRowById" resultType="java.util.LinkedHashMap">
+        select * from ${tableName} where `${pkColumn}` = #{id} limit 1
+    </select>
+
+    <delete id="deleteEntityRowsByIds">
+        delete from ${tableName} where `${pkColumn}` in
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <update id="updateEntityRowById">
+        update ${tableName}
+        <set>
+            <foreach collection="values" item="item" separator=",">
+                `${item.column}` = #{item.value}
+            </foreach>
+        </set>
+        where `${pkColumn}` = #{id}
+    </update>
+
+    <insert id="insertEntityRow">
+        insert into ${tableName}
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <foreach collection="values" item="item">
+                `${item.column}`,
+            </foreach>
+        </trim>
+        values
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <foreach collection="values" item="item">
+                #{item.value},
+            </foreach>
+        </trim>
+    </insert>
+
+    <select id="selectPrimaryKeyColumn" resultType="String">
+        select column_name
+        from information_schema.key_column_usage
+        where table_schema = (select database())
+          and table_name = #{tableName}
+          and constraint_name = 'PRIMARY'
+        order by ordinal_position
+        limit 1
+    </select>
+
+    <select id="selectColumnNames" resultType="String">
+        select column_name
+        from information_schema.columns
+        where table_schema = (select database())
+          and table_name = #{tableName}
+        order by ordinal_position
+    </select>
+
+    <select id="selectLastInsertId" resultType="Long">
+        select last_insert_id()
+    </select>
+
+</mapper>

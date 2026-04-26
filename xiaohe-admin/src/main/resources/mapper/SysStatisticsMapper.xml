@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaohe.web.mapper.SysStatisticsMapper">
+
+
+    <select id="getViewDeilt" resultType="com.xiaohe.web.domain.Dto.SysStatisticsDto">
+        SELECT
+            t1.NAME,
+            t1.phone,
+            t1.craft,
+            t1.id,
+            IFNULL( t2.dayManHour, 0 ) dayManHour,
+            IFNULL( t1.living_expenses, 0 ) livingExpenses,
+            IFNULL( t3.lendMoney, 0 ) lendMoney,
+            IFNULL(( t1.per_diem * t2.dayManHour ), 0 ) wage,(
+                IFNULL( t1.per_diem * t2.dayManHour, 0 ) - IFNULL( t1.living_expenses, 0 ) - IFNULL( t3.lendMoney, 0 )
+                ) wagePayable
+        FROM
+            sys_worker_user t1
+                LEFT JOIN (
+                SELECT
+                    sum( man_hour ) dayManHour,
+                    user_id
+                FROM
+                    sys_accounts
+                WHERE
+                    examine_state = 2
+                GROUP BY
+                    user_id
+            ) t2 ON t1.id = t2.user_id
+                LEFT JOIN (
+                SELECT
+                    sum( lend_money ) lendMoney,
+                    worker_user_id
+                FROM
+                    sys_worker_user_view
+                GROUP BY
+                    worker_user_id
+            ) t3 ON t1.id = t3.worker_user_id
+
+
+        WHERE t1.id = ${userId}
+    </select>
+
+    <select id="getAccountByUser" resultType="com.xiaohe.web.domain.Dto.SysStatisticsDto">
+        SELECT
+            t1.NAME,
+            t1.phone,
+            t1.craft,
+            t1.id,
+            IFNULL( t2.dayManHour, 0 ) dayManHour,
+            IFNULL( t1.living_expenses, 0 ) livingExpenses,
+            IFNULL( t3.lendMoney, 0 ) lendMoney,
+            IFNULL(( t1.per_diem * t2.dayManHour ), 0 ) wage,(
+                IFNULL( t1.per_diem * t2.dayManHour, 0 ) - IFNULL( t1.living_expenses, 0 ) - IFNULL( t3.lendMoney, 0 )
+                ) wagePayable
+        FROM
+            sys_worker_user t1
+                LEFT JOIN (
+                SELECT
+                    sum( man_hour ) dayManHour,
+                    user_id
+                FROM
+                    sys_accounts
+                WHERE
+                    examine_state = 2
+                GROUP BY
+                    user_id
+            ) t2 ON t1.id = t2.user_id
+                LEFT JOIN (
+                SELECT
+                    sum( lend_money ) lendMoney,
+                    worker_user_id
+                FROM
+                    sys_worker_user_view
+                GROUP BY
+                    worker_user_id
+            ) t3 ON t1.id = t3.worker_user_id
+    </select>
+    <select id="getAccountsByUserId" resultType="com.xiaohe.web.domain.Dto.SysStatisticsDto">
+        SELECT (SELECT sum(t1.man_hour) dayManHour
+                FROM sys_accounts t1
+                WHERE t1.user_id = #{userId}
+                  AND t1.examine_state = '2')        as dayManHour,
+
+
+               (SELECT sum(t2.lend_money) lendMoney
+                FROM sys_worker_user_view t2
+                WHERE t2.worker_user_id = #{userId}) as lendMoney
+    </select>
+
+
+    <select id="getAccountsEx" resultType="com.xiaohe.web.domain.Export.SysAccountsEx">
+        SELECT *
+        FROM sys_accounts
+        WHERE user_id = #{userId}
+          AND examine_state = '2'
+    </select>
+
+    <select id="getWorkerUserViewEx" resultType="com.xiaohe.web.domain.Export.SysWorkerUserViewEx">
+        SELECT
+            t1.living_expenses,
+            t1.lend_money,
+            t1.create_time,
+            t1.remark,
+            t2.name as name
+        FROM sys_worker_user_view t1
+            left join sys_worker_user t2 on t2.id = #{userId}
+
+        WHERE worker_user_id = #{userId}
+
+    </select>
+
+
+</mapper>

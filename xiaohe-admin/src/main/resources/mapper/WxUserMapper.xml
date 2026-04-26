@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaohe.web.mapper.WxUserMapper">
+    
+    <resultMap type="com.xiaohe.web.domain.WxUser" id="WxUserResult">
+        <result property="id"    column="id"    />
+        <result property="openId"    column="open_id"    />
+        <result property="phone"    column="phone"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="name"    column="name"    />
+        <result property="avatar"    column="avatar"    />
+        <result property="isExamine"    column="is_examine"    />
+        <result property="deptName"    column="dept_name"    />
+        <result property="deptId"    column="dept_id"    />
+        <result property="value"    column="value"    />
+        <result property="label"    column="label"    />
+    </resultMap>
+
+    <sql id="selectWxUserVo">
+        select id, open_id, phone, create_time, name, avatar,is_examine from wx_user
+    </sql>
+
+    <select id="selectWxUserList" resultMap="WxUserResult">
+        select t1.id,
+        t1.open_id,
+        t1.phone,
+        t1.create_time,
+        t1.name,
+        t1.avatar,
+        t1.is_examine,
+        t1.dept_id,
+        t2.dept_name
+        from wx_user t1
+        left join sys_dept t2 on t1.dept_id = t2.dept_id
+
+        <where>
+            <if test="openId != null  and openId != ''">
+                and t1.open_id = #{openId}
+            </if>
+            <if test="phone != null  and phone != ''">
+                and t1.phone = #{phone}
+            </if>
+            <if test="name != null  and name != ''">
+                and t1.name like concat('%', #{name}, '%')
+            </if>
+            <if test="avatar != null  and avatar != ''">
+                and t1.avatar = #{avatar}
+            </if>
+            <if test="isExamine != null  and isExamine != ''">
+                and t1.is_examine = #{isExamine}
+            </if>
+            <if test="beginTime != null  and endTime != null">
+                and
+                t1.create_time BETWEEN #{beginTime}
+                AND #{endTime}
+            </if>
+            <if test="deptId != null  and deptId != null">
+                and
+                t1.dept_id BETWEEN #{deptId}
+                AND #{deptId}
+            </if>
+            <if test="deptName != null  and deptName != null">
+                and
+                t2.dept_name like concat('%', #{deptName}, '%')
+            </if>
+        </where>
+        order by t1.create_time desc
+    </select>
+
+    <select id="selectExamineWxUserList" resultMap="WxUserResult">
+        select
+               t1.dept_id as value,
+               t2.dept_name as label
+             from wx_user t1
+             left join sys_dept t2 on t1.dept_id = t2.dept_id
+          where t1.is_examine = '2'  order by t1.create_time desc
+    </select>
+    <select id="allSelectExamineWxUserList" parameterType="String"  resultMap="WxUserResult">
+        select id,
+               open_id as value,
+               phone,
+               create_time,
+              name as label,
+              avatar,
+               is_examine,
+              dept_id
+            from sys_worker_user  where dept_id = #{deptId} and is_examine = "2"  order by create_time desc
+    </select>
+
+    <select id="selectWxUserById" parameterType="Long" resultMap="WxUserResult">
+        <include refid="selectWxUserVo"/>
+        where id = #{id}
+    </select>
+
+    <select id="selectWxUserByOpenId" parameterType="String" resultMap="WxUserResult">
+        <include refid="selectWxUserVo"/>
+        where open_id = #{openId}
+    </select>
+
+
+    <insert id="insertWxUser" parameterType="WxUser" keyProperty="id">
+        insert into sys_worker_user
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">id,</if>
+            <if test="openId != null">open_id,</if>
+            <if test="phone != null">phone,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="name != null">name,</if>
+            <if test="avatar != null">avatar,</if>
+            <if test="isExamine != null">is_examine,</if>
+            <if test="deptId != null">dept_id,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">#{id},</if>
+            <if test="openId != null">#{openId},</if>
+            <if test="phone != null">#{phone},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="name != null">#{name},</if>
+            <if test="avatar != null">#{avatar},</if>
+            <if test="isExamine != null">#{isExamine},</if>
+            <if test="deptId != null">#{deptId},</if>
+         </trim>
+    </insert>
+
+    <update id="updateWxUser" parameterType="WxUser">
+        update sys_worker_user
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="openId != null">open_id = #{openId},</if>
+            <if test="phone != null">phone = #{phone},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="name != null">name = #{name},</if>
+            <if test="avatar != null">avatar = #{avatar},</if>
+            <if test="isExamine != null">is_examine = #{isExamine},</if>
+            <if test="phone != null">phone = #{phone},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteWxUserById" parameterType="Long">
+        delete from sys_worker_user where id = #{id}
+    </delete>
+
+    <delete id="deleteWxUserByIds" parameterType="String">
+        delete from sys_worker_user where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <select id="getOpenId" resultMap="WxUserResult">
+        select * from sys_worker_user
+        where open_id = #{openId}
+    </select>
+
+
+
+    <select id="getName" resultMap="WxUserResult">
+        <include refid="selectWxUserVo"/>
+        where name = #{name}
+    </select>
+
+    <select id="getPhone" resultMap="WxUserResult">
+        <include refid="selectWxUserVo"/>
+        where phone = #{phone}
+    </select>
+
+
+</mapper>

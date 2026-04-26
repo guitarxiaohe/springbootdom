@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaohe.web.mapper.SysWorkerUserMapper">
+
+    <select id="getOpenId" resultType="com.xiaohe.web.domain.Entity.SysWorkerUser">
+        select * from sys_worker_user
+        where open_id = #{openId}
+    </select>
+
+    <select id="selUserByProjectId" resultType="com.xiaohe.web.domain.Entity.SysAccounts">
+        SELECT *
+        FROM sys_accounts
+        WHERE project_id IN (SELECT project_id
+                             FROM sys_project t1
+                             WHERE t1.project_head_id = #{id})
+    </select>
+
+    <select id="selProjectByUserId" resultType="com.xiaohe.web.domain.Entity.SysProject">
+        select * from sys_project
+
+        where project_id in
+
+        <foreach collection="sysProjectList" item="t" separator="," open="(" close=")">
+            #{t.projectId}
+        </foreach>
+
+
+    </select>
+
+
+
+
+
+</mapper>

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaohe.web.mapper.TestMapper">
+    <!-- 基础结果映射 -->
+    <resultMap id="BaseResultMap" type="com.xiaohe.web.domain.Entity.SysTest">
+        <id column="test_id" property="testId" jdbcType="BIGINT"/>
+        <result column="test_name" property="testName" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="create_by" property="createBy" jdbcType="VARCHAR"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+        <result column="updata_by" property="updateBy" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!-- 基础列名 -->
+    <sql id="Base_Column_List">
+        test_id, test_name, create_time, create_by, update_time, updata_by
+    </sql>
+
+    <!-- 根据ID查询 -->
+    <select id="selectById" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM sys_test
+        WHERE test_id = #{testId,jdbcType=BIGINT}
+    </select>
+
+    <!-- 查询所有 -->
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM sys_test
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 条件查询 -->
+    <select id="selectListQuery" parameterType="map" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM sys_test
+        <where>
+            <if test="params.testId != null">
+                AND test_id = #{params.testId,jdbcType=BIGINT}
+            </if>
+            <if test="params.testName != null and params.testName != ''">
+                AND test_name LIKE CONCAT('%', #{params.testName,jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="params.createBy != null and params.createBy != ''">
+                AND create_by = #{params.createBy,jdbcType=VARCHAR}
+            </if>
+            <if test="params.startTime != null">
+                AND create_time &gt;= #{params.startTime,jdbcType=TIMESTAMP}
+            </if>
+            <if test="params.endTime != null">
+                AND create_time &lt;= #{params.endTime,jdbcType=TIMESTAMP}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+
+
+
+
+
+
+
+</mapper>
