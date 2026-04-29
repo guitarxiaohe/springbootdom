@@ -36,7 +36,7 @@ public class SysFileInfo extends BaseEntity
 
     /** 存储路径 */
     @Excel(name = "存储路径")
-    private String filePath;
+    private String fileUrl;
 
     /** 是否删除：Y-被删除，N-未删除 */
     private String delFlag;
@@ -86,14 +86,14 @@ public class SysFileInfo extends BaseEntity
     {
         return fileObjectName;
     }
-    public void setFilePath(String filePath) 
+    public void setfileUrl(String fileUrl) 
     {
-        this.filePath = filePath;
+        this.fileUrl = fileUrl;
     }
 
-    public String getFilePath() 
+    public String getfileUrl() 
     {
-        return filePath;
+        return fileUrl;
     }
     public void setDelFlag(String delFlag) 
     {
@@ -113,7 +113,7 @@ public class SysFileInfo extends BaseEntity
             .append("fileSuffix", getFileSuffix())
             .append("fileSizeInfo", getFileSizeInfo())
             .append("fileObjectName", getFileObjectName())
-            .append("filePath", getFilePath())
+            .append("fileUrl", getfileUrl())
             .append("delFlag", getDelFlag())
             .append("createBy", getCreateBy())
             .append("createTime", getCreateTime())

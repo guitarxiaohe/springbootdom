@@ -50,14 +50,8 @@ public class OperatorUserFillServiceImpl implements IOperatorUserFillService
         Map<Long, OperatorUserVo> map = userService.selectOperatorUserMapByIds(ids);
         for (AuditUserAttachable row : list)
         {
-            if (row.getCreatedBy() != null)
-            {
-                row.setCreateUser(map.get(row.getCreatedBy()));
-            }
-            if (row.getUpdatedBy() != null)
-            {
-                row.setUpdateUser(map.get(row.getUpdatedBy()));
-            }
+            row.setCreateUser(row.getCreatedBy() == null ? null : map.get(row.getCreatedBy()));
+            row.setUpdateUser(row.getUpdatedBy() == null ? null : map.get(row.getUpdatedBy()));
         }
     }
 
@@ -93,14 +87,8 @@ public class OperatorUserFillServiceImpl implements IOperatorUserFillService
         Map<String, OperatorUserVo> map = userService.selectOperatorUserMapByUserNames(userNames);
         for (BaseEntity row : list)
         {
-            if (StringUtils.isNotEmpty(row.getCreateBy()))
-            {
-                row.setCreateUser(map.get(row.getCreateBy().trim()));
-            }
-            if (StringUtils.isNotEmpty(row.getUpdateBy()))
-            {
-                row.setUpdateUser(map.get(row.getUpdateBy().trim()));
-            }
+            row.setCreateUser(StringUtils.isNotEmpty(row.getCreateBy()) ? map.get(row.getCreateBy().trim()) : null);
+            row.setUpdateUser(StringUtils.isNotEmpty(row.getUpdateBy()) ? map.get(row.getUpdateBy().trim()) : null);
         }
     }
 
@@ -141,15 +129,9 @@ public class OperatorUserFillServiceImpl implements IOperatorUserFillService
         for (T row : list)
         {
             Long c = getCreatedBy.apply(row);
-            if (c != null)
-            {
-                setCreateUser.accept(row, map.get(c));
-            }
+            setCreateUser.accept(row, c == null ? null : map.get(c));
             Long u = getUpdatedBy.apply(row);
-            if (u != null)
-            {
-                setUpdateUser.accept(row, map.get(u));
-            }
+            setUpdateUser.accept(row, u == null ? null : map.get(u));
         }
     }
 
@@ -179,19 +161,11 @@ public class OperatorUserFillServiceImpl implements IOperatorUserFillService
         {
             if (createByColumn != null)
             {
-                OperatorUserVo user = resolveUser(row.get(createByColumn), map, nameMap);
-                if (user != null)
-                {
-                    row.put("createUser", user);
-                }
+                row.put("createUser", resolveUser(row.get(createByColumn), map, nameMap));
             }
             if (updateByColumn != null)
             {
-                OperatorUserVo user = resolveUser(row.get(updateByColumn), map, nameMap);
-                if (user != null)
-                {
-                    row.put("updateUser", user);
-                }
+                row.put("updateUser", resolveUser(row.get(updateByColumn), map, nameMap));
             }
         }
     }

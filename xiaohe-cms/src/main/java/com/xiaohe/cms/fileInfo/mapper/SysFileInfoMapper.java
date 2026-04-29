@@ -1,6 +1,7 @@
 package com.xiaohe.cms.fileInfo.mapper;
 
 import java.util.List;
+import org.apache.ibatis.annotations.Param;
 import com.xiaohe.cms.fileInfo.domain.SysFileInfo;
 
 /**
@@ -26,6 +27,8 @@ public interface SysFileInfoMapper
      * @return 文件管理
      */
     public SysFileInfo selectSysFileInfoByFileId(Long fileId);
+
+    public List<SysFileInfo> selectSysFileInfoByFileUrls(@Param("fileUrls") List<String> fileUrls);
 
     /**
      * 查询文件管理列表

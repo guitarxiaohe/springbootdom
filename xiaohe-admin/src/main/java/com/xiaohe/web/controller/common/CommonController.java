@@ -122,7 +122,7 @@ public class CommonController
             sysFileInfo.setFileSuffix(suffix);
             sysFileInfo.setFileSizeInfo(fileSizeInfo);
             sysFileInfo.setFileObjectName(newFileName);
-            sysFileInfo.setFilePath(fileName);
+            sysFileInfo.setfileUrl(fileName);
             sysFileInfo.setDelFlag("N");
             sysFileInfo.setCreateBy(getUsername());
             sysFileInfoService.insertSysFileInfo(sysFileInfo);

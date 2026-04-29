@@ -10,6 +10,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="fieldKey" column="field_key"/>
         <result property="fieldName" column="field_name"/>
         <result property="fieldType" column="field_type"/>
+        <result property="fieldRole" column="field_role"/>
         <result property="dictCode" column="dict_code"/>
         <result property="selectEntityKey" column="select_entity_key"/>
         <result property="sort" column="sort"/>
@@ -23,7 +24,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectFieldConfigVo">
-        select id, entity_key, field_key, field_name, field_type, dict_code, select_entity_key, sort, is_fuzzy_search, is_visible, created_by, created_time, updated_by, updated_time,fixed
+        select id, entity_key, field_key, field_name, field_type, field_role, dict_code, select_entity_key, sort, is_fuzzy_search, is_visible, created_by, created_time, updated_by, updated_time,fixed
         from field_config
     </sql>
 
@@ -46,6 +47,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             </if>
             <if test="dictCode != null and dictCode != ''">
                 AND dict_code = #{dictCode}
+            </if>
+            <if test="fieldRole != null and fieldRole != ''">
+                AND field_role = #{fieldRole}
             </if>
             <if test="isVisible != null">
                 AND is_visible = #{isVisible}
@@ -71,7 +75,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
 
     <select id="selectFieldFilterMetaByEntityKey" parameterType="String" resultType="java.util.HashMap">
-        select field_key as fieldKey, is_fuzzy_search as isFuzzySearch, select_entity_key as selectEntityKey
+        select field_key as fieldKey, field_type as fieldType, field_role as fieldRole, is_fuzzy_search as isFuzzySearch, select_entity_key as selectEntityKey
         from field_config
         where entity_key = #{entityKey}
         order by sort
@@ -90,6 +94,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="fieldKey != null and fieldKey != ''">field_key,</if>
             <if test="fieldName != null and fieldName != ''">field_name,</if>
             <if test="fieldType != null and fieldType != ''">field_type,</if>
+            <if test="fieldRole != null and fieldRole != ''">field_role,</if>
             <if test="dictCode != null and dictCode != ''">dict_code,</if>
             <if test="selectEntityKey != null and selectEntityKey != ''">select_entity_key,</if>
             <if test="sort != null">sort,</if>
@@ -103,6 +108,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="fieldKey != null and fieldKey != ''">#{fieldKey},</if>
             <if test="fieldName != null and fieldName != ''">#{fieldName},</if>
             <if test="fieldType != null and fieldType != ''">#{fieldType},</if>
+            <if test="fieldRole != null and fieldRole != ''">#{fieldRole},</if>
             <if test="dictCode != null and dictCode != ''">#{dictCode},</if>
             <if test="selectEntityKey != null and selectEntityKey != ''">#{selectEntityKey},</if>
             <if test="sort != null">#{sort},</if>
@@ -121,6 +127,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="fieldKey != null and fieldKey != ''">field_key = #{fieldKey},</if>
             <if test="fieldName != null and fieldName != ''">field_name = #{fieldName},</if>
             <if test="fieldType != null">field_type = #{fieldType},</if>
+            <if test="fieldRole != null">field_role = #{fieldRole},</if>
             <if test="dictCode != null">dict_code = #{dictCode},</if>
             <if test="selectEntityKey != null">select_entity_key = #{selectEntityKey},</if>
             <if test="sort != null">sort = #{sort},</if>

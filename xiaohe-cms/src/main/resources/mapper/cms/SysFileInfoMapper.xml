@@ -10,7 +10,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="fileSuffix"    column="file_suffix"    />
         <result property="fileSizeInfo"    column="file_size_info"    />
         <result property="fileObjectName"    column="file_object_name"    />
-        <result property="filePath"    column="file_path"    />
+        <result property="fileUrl"    column="file_url"    />
         <result property="delFlag"    column="del_flag"    />
         <result property="createBy"    column="create_by"    />
         <result property="createTime"    column="create_time"    />
@@ -19,7 +19,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectSysFileInfoVo">
-        select file_id, file_origin_name, file_suffix, file_size_info, file_object_name, file_path, del_flag, create_by, create_time, update_by, update_time from sys_file_info
+        select file_id, file_origin_name, file_suffix, file_size_info, file_object_name, file_url, del_flag, create_by, create_time, update_by, update_time from sys_file_info
     </sql>
 
     <select id="selectSysFileInfoList" parameterType="SysFileInfo" resultMap="SysFileInfoResult">
@@ -29,7 +29,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="fileSuffix != null  and fileSuffix != ''"> and file_suffix = #{fileSuffix}</if>
             <if test="fileSizeInfo != null  and fileSizeInfo != ''"> and file_size_info = #{fileSizeInfo}</if>
             <if test="fileObjectName != null  and fileObjectName != ''"> and file_object_name = #{fileObjectName}</if>
-            <if test="filePath != null  and filePath != ''"> and file_path = #{filePath}</if>
+            <if test="fileUrl != null  and fileUrl != ''"> and file_url = #{fileUrl}</if>
             <if test="createBy != null  and createBy != ''"> and create_by = #{createBy}</if>
         </where>
         ORDER BY create_time DESC
@@ -38,6 +38,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectSysFileInfoByFileId" parameterType="Long" resultMap="SysFileInfoResult">
         <include refid="selectSysFileInfoVo"/>
         where file_id = #{fileId}
+    </select>
+    <select id="selectSysFileInfoByFileUrls" resultMap="SysFileInfoResult">
+        <include refid="selectSysFileInfoVo"/>
+        where file_url in
+        <foreach item="fileUrl" collection="fileUrls" open="(" separator="," close=")">
+            #{fileUrl}
+        </foreach>
     </select>
     <select id="selectSysFileInfoByFileObjectName" parameterType="String" resultMap="SysFileInfoResult">
         <include refid="selectSysFileInfoVo"/>
@@ -51,7 +58,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="fileSuffix != null">file_suffix,</if>
             <if test="fileSizeInfo != null">file_size_info,</if>
             <if test="fileObjectName != null">file_object_name,</if>
-            <if test="filePath != null">file_path,</if>
+            <if test="fileUrl != null">file_url,</if>
             <if test="delFlag != null and delFlag != ''">del_flag,</if>
             <if test="createBy != null">create_by,</if>
             <if test="createTime != null">create_time,</if>
@@ -63,7 +70,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="fileSuffix != null">#{fileSuffix},</if>
             <if test="fileSizeInfo != null">#{fileSizeInfo},</if>
             <if test="fileObjectName != null">#{fileObjectName},</if>
-            <if test="filePath != null">#{filePath},</if>
+            <if test="fileUrl != null">#{fileUrl},</if>
             <if test="delFlag != null and delFlag != ''">#{delFlag},</if>
             <if test="createBy != null">#{createBy},</if>
             <if test="createTime != null">#{createTime},</if>
@@ -79,7 +86,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="fileSuffix != null">file_suffix = #{fileSuffix},</if>
             <if test="fileSizeInfo != null">file_size_info = #{fileSizeInfo},</if>
             <if test="fileObjectName != null">file_object_name = #{fileObjectName},</if>
-            <if test="filePath != null">file_path = #{filePath},</if>
+            <if test="fileUrl != null">file_url = #{fileUrl},</if>
             <if test="delFlag != null and delFlag != ''">del_flag = #{delFlag},</if>
             <if test="createBy != null">create_by = #{createBy},</if>
             <if test="createTime != null">create_time = #{createTime},</if>

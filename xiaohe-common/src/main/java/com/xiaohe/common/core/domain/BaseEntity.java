@@ -8,6 +8,7 @@ import java.util.Map;
 import com.baomidou.mybatisplus.annotation.FieldStrategy;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.xiaohe.common.core.domain.vo.OperatorUserVo;
 
@@ -49,6 +50,7 @@ public class BaseEntity implements Serializable {
      * 创建人信息（查询返回时填充，不落库）
      */
     @TableField(exist = false)
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private OperatorUserVo createUser;
 
@@ -56,6 +58,7 @@ public class BaseEntity implements Serializable {
      * 修改人信息（查询返回时填充，不落库）
      */
     @TableField(exist = false)
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private OperatorUserVo updateUser;
 

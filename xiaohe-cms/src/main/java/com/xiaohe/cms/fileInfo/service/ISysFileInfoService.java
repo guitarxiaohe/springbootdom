@@ -26,6 +26,8 @@ public interface ISysFileInfoService
      */
     public SysFileInfo selectSysFileInfoByFileId(Long fileId);
 
+    public List<SysFileInfo> selectSysFileInfoByFileUrls(List<String> fileUrls);
+
     /**
      * 查询文件管理列表
      * 

@@ -1,5 +1,10 @@
 package com.xiaohe.web.controller.system;
 
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.xiaohe.common.annotation.Log;
+import com.xiaohe.common.config.XiaoHeConfig;
 import com.xiaohe.common.core.controller.BaseController;
 import com.xiaohe.common.core.domain.AjaxResult;
 import com.xiaohe.common.core.page.PageDomain;
@@ -22,6 +28,8 @@ import com.xiaohe.common.core.page.TableSupport;
 import com.xiaohe.common.enums.BusinessType;
 import com.xiaohe.common.utils.StringUtils;
 import com.xiaohe.common.utils.sql.SqlUtil;
+import com.xiaohe.cms.fileInfo.domain.SysFileInfo;
+import com.xiaohe.cms.fileInfo.service.ISysFileInfoService;
 import com.xiaohe.system.domain.FieldConfig;
 import com.xiaohe.system.domain.FieldConfigSortRequest;
 import com.xiaohe.system.service.IDynamicEntityDataService;
@@ -45,6 +53,9 @@ public class FieldConfigController extends BaseController
 
     @Autowired
     private IOperatorUserFillService operatorUserFillService;
+
+    @Autowired
+    private ISysFileInfoService sysFileInfoService;
 
     /**
      * 查询字段配置列表
@@ -81,6 +92,7 @@ public class FieldConfigController extends BaseController
             }
             List<Map<String, Object>> rows = dynamicEntityDataService.selectEntityRowList(entityKey,
                     pageDomain.getPageNum(), pageDomain.getPageSize(), orderBy, pageDomain.getReasonable());
+            enrichDynamicRows(entityKey, rows);
             return getDataTable(rows);
         }
         List<FieldConfig> list = fieldConfigService.selectFieldConfigByEntityKey(entityKey);
@@ -123,7 +135,9 @@ public class FieldConfigController extends BaseController
     @GetMapping("/data/{entityKey}/{id}")
     public AjaxResult getEntityRow(@PathVariable String entityKey, @PathVariable Long id)
     {
-        return AjaxResult.success(dynamicEntityDataService.selectEntityRowById(entityKey, id));
+        Map<String, Object> row = dynamicEntityDataService.selectEntityRowById(entityKey, id);
+        enrichDynamicRows(entityKey, Collections.singletonList(row));
+        return AjaxResult.success(row);
     }
 
     /**
@@ -235,5 +249,253 @@ public class FieldConfigController extends BaseController
     public AjaxResult updateSort(@RequestBody FieldConfigSortRequest request)
     {
         return toAjax(fieldConfigService.updateSortBatch(request.getEntityKey(), request.getItems(), getUserId()));
+    }
+
+    private void enrichDynamicRows(String entityKey, List<Map<String, Object>> rows)
+    {
+        if (rows == null || rows.isEmpty() || StringUtils.isEmpty(entityKey))
+        {
+            return;
+        }
+        List<FieldConfig> fieldConfigs = fieldConfigService.selectFieldConfigByEntityKey(entityKey);
+        if (fieldConfigs == null || fieldConfigs.isEmpty())
+        {
+            return;
+        }
+        attachAuditUsers(rows, fieldConfigs);
+        attachFileInfos(rows, fieldConfigs);
+    }
+
+    private void attachAuditUsers(List<Map<String, Object>> rows, List<FieldConfig> fieldConfigs)
+    {
+        if (rows == null || rows.isEmpty() || fieldConfigs == null || fieldConfigs.isEmpty())
+        {
+            return;
+        }
+        String createByColumn = null;
+        String updateByColumn = null;
+        for (FieldConfig fieldConfig : fieldConfigs)
+        {
+            if (fieldConfig == null || StringUtils.isEmpty(fieldConfig.getFieldKey()))
+            {
+                continue;
+            }
+            String fieldKey = resolveRowFieldKey(rows, fieldConfig.getFieldKey());
+            if (StringUtils.isEmpty(fieldKey))
+            {
+                continue;
+            }
+            String fieldRole = normalizeFieldRole(fieldConfig.getFieldRole());
+            if (createByColumn == null && ("createUser".equalsIgnoreCase(fieldRole)
+                    || (StringUtils.isEmpty(fieldRole) && "by".equalsIgnoreCase(fieldConfig.getFieldType())
+                    && isCreateAuditField(fieldKey))))
+            {
+                createByColumn = fieldKey;
+            }
+            if (updateByColumn == null && ("updateUser".equalsIgnoreCase(fieldRole)
+                    || (StringUtils.isEmpty(fieldRole) && "by".equalsIgnoreCase(fieldConfig.getFieldType())
+                    && isUpdateAuditField(fieldKey))))
+            {
+                updateByColumn = fieldKey;
+            }
+        }
+        if (createByColumn != null || updateByColumn != null)
+        {
+            operatorUserFillService.fillAuditUserMaps(rows, createByColumn, updateByColumn);
+        }
+    }
+
+    private void attachFileInfos(List<Map<String, Object>> rows, List<FieldConfig> fieldConfigs)
+    {
+        if (rows == null || rows.isEmpty() || fieldConfigs == null || fieldConfigs.isEmpty())
+        {
+            return;
+        }
+        List<String> fileFieldKeys = new ArrayList<>();
+        for (FieldConfig fieldConfig : fieldConfigs)
+        {
+            if (fieldConfig == null || StringUtils.isEmpty(fieldConfig.getFieldKey())
+                    || !isFileInfoField(fieldConfig))
+            {
+                continue;
+            }
+            String rowFieldKey = resolveRowFieldKey(rows, fieldConfig.getFieldKey());
+            if (StringUtils.isNotEmpty(rowFieldKey))
+            {
+                fileFieldKeys.add(rowFieldKey);
+            }
+        }
+        if (fileFieldKeys.isEmpty())
+        {
+            return;
+        }
+        Map<String, Map<String, Object>> fileInfoByCandidate = new LinkedHashMap<>();
+        LinkedHashSet<String> fileUrls = new LinkedHashSet<>();
+        for (Map<String, Object> row : rows)
+        {
+            if (row == null)
+            {
+                continue;
+            }
+            for (String fileFieldKey : fileFieldKeys)
+            {
+                Object fileUrlObj = row.get(fileFieldKey);
+                if (fileUrlObj == null)
+                {
+                    continue;
+                }
+                fileUrls.addAll(resolveFileUrlCandidates(String.valueOf(fileUrlObj)));
+            }
+        }
+        if (fileUrls.isEmpty())
+        {
+            return;
+        }
+        List<SysFileInfo> fileInfos = sysFileInfoService.selectSysFileInfoByFileUrls(new ArrayList<>(fileUrls));
+        for (SysFileInfo fileInfo : fileInfos)
+        {
+            if (fileInfo == null || StringUtils.isEmpty(fileInfo.getfileUrl()))
+            {
+                continue;
+            }
+            fileInfoByCandidate.put(fileInfo.getfileUrl(), buildFileInfo(fileInfo));
+        }
+        if (fileInfoByCandidate.isEmpty())
+        {
+            return;
+        }
+        for (Map<String, Object> row : rows)
+        {
+            if (row == null)
+            {
+                continue;
+            }
+            for (String fileFieldKey : fileFieldKeys)
+            {
+                Object fileUrlObj = row.get(fileFieldKey);
+                if (fileUrlObj == null)
+                {
+                    continue;
+                }
+                for (String candidate : resolveFileUrlCandidates(String.valueOf(fileUrlObj)))
+                {
+                    Map<String, Object> fileInfo = fileInfoByCandidate.get(candidate);
+                    if (fileInfo != null)
+                    {
+                        row.put(buildFileInfoKey(fileFieldKey), fileInfo);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    private String buildFileInfoKey(String fieldKey)
+    {
+        if ("fileUrl".equals(fieldKey))
+        {
+            return "fileInfo";
+        }
+        return fieldKey + "Info";
+    }
+
+    private boolean isFileInfoField(FieldConfig fieldConfig)
+    {
+        String fieldRole = normalizeFieldRole(fieldConfig.getFieldRole());
+        if ("fileInfo".equalsIgnoreCase(fieldRole))
+        {
+            return true;
+        }
+        return StringUtils.isEmpty(fieldRole) && "file".equalsIgnoreCase(fieldConfig.getFieldType());
+    }
+
+    private String resolveRowFieldKey(List<Map<String, Object>> rows, String fieldKey)
+    {
+        if (rows == null || rows.isEmpty() || StringUtils.isEmpty(fieldKey))
+        {
+            return fieldKey;
+        }
+        for (Map<String, Object> row : rows)
+        {
+            if (row == null || row.isEmpty())
+            {
+                continue;
+            }
+            if (row.containsKey(fieldKey))
+            {
+                return fieldKey;
+            }
+            String camelFieldKey = StringUtils.toCamelCase(fieldKey);
+            if (row.containsKey(camelFieldKey))
+            {
+                return camelFieldKey;
+            }
+        }
+        return StringUtils.toCamelCase(fieldKey);
+    }
+
+    private String normalizeFieldRole(String fieldRole)
+    {
+        return fieldRole == null ? "" : fieldRole.trim();
+    }
+
+    private boolean isCreateAuditField(String fieldKey)
+    {
+        return "createBy".equals(fieldKey) || "createdBy".equals(fieldKey);
+    }
+
+    private boolean isUpdateAuditField(String fieldKey)
+    {
+        return "updateBy".equals(fieldKey) || "updatedBy".equals(fieldKey);
+    }
+
+    private List<String> resolveFileUrlCandidates(String fileUrl)
+    {
+        if (StringUtils.isEmpty(fileUrl))
+        {
+            return Collections.emptyList();
+        }
+        LinkedHashSet<String> candidates = new LinkedHashSet<>();
+        String value = fileUrl.trim();
+        candidates.add(value);
+        String fileUrlPrefix = XiaoHeConfig.getFileUrl();
+        if (StringUtils.isNotEmpty(fileUrlPrefix) && value.startsWith(fileUrlPrefix))
+        {
+            String relativePath = value.substring(fileUrlPrefix.length());
+            if (StringUtils.isNotEmpty(relativePath))
+            {
+                candidates.add(relativePath);
+            }
+        }
+        int profileIndex = value.indexOf("/profile/");
+        if (profileIndex >= 0)
+        {
+            candidates.add(value.substring(profileIndex));
+        }
+        try
+        {
+            URI uri = URI.create(value);
+            if (StringUtils.isNotEmpty(uri.getPath()))
+            {
+                candidates.add(uri.getPath());
+            }
+        }
+        catch (Exception ignored)
+        {
+        }
+        return new ArrayList<>(candidates);
+    }
+
+    private Map<String, Object> buildFileInfo(SysFileInfo fileInfo)
+    {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("fileId", fileInfo.getFileId());
+        result.put("fileObjectName", fileInfo.getFileObjectName());
+        result.put("fileOriginName", fileInfo.getFileOriginName());
+        result.put("fileUrl", fileInfo.getfileUrl());
+        result.put("fileSizeInfo", fileInfo.getFileSizeInfo());
+        result.put("fileSuffix", fileInfo.getFileSuffix());
+        result.put("storageType", "local");
+        return result;
     }
 }

@@ -1,6 +1,7 @@
 package com.xiaohe.system.domain;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.xiaohe.common.core.domain.BaseEntity;
 import com.xiaohe.common.core.domain.vo.AuditUserAttachable;
 import com.xiaohe.common.core.domain.vo.OperatorUserVo;
@@ -28,6 +29,8 @@ public class FieldConfig extends BaseEntity implements AuditUserAttachable
 
     private String fieldType;
 
+    private String fieldRole;
+
     private String dictCode;
 
     private String selectEntityKey;
@@ -47,10 +50,12 @@ public class FieldConfig extends BaseEntity implements AuditUserAttachable
     private Long updatedTime;
 
     /** 创建人信息（查询返回时填充，不落库） */
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private OperatorUserVo createUser;
 
     /** 修改人信息（查询返回时填充，不落库） */
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private OperatorUserVo updateUser;
 
