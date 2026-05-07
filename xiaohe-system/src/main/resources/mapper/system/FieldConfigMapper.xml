@@ -61,6 +61,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectFieldConfigByEntityKey" parameterType="String" resultMap="FieldConfigResult">
         <include refid="selectFieldConfigVo"/>
         where entity_key = #{entityKey}
+          and is_visible = 1
         order by sort
     </select>
 
@@ -71,13 +72,16 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <select id="countFieldConfigByEntityKeyAndFieldKey" resultType="int">
         select count(1) from field_config
-        where entity_key = #{entityKey} and field_key = #{fieldKey}
+        where entity_key = #{entityKey}
+          and field_key = #{fieldKey}
+          and is_visible = 1
     </select>
 
     <select id="selectFieldFilterMetaByEntityKey" parameterType="String" resultType="java.util.HashMap">
         select field_key as fieldKey, field_type as fieldType, field_role as fieldRole, is_fuzzy_search as isFuzzySearch, select_entity_key as selectEntityKey
         from field_config
         where entity_key = #{entityKey}
+          and is_visible = 1
         order by sort
     </select>
 

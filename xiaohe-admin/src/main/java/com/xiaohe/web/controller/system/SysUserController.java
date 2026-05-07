@@ -151,16 +151,16 @@ public class SysUserController extends BaseController
     public AjaxResult edit(@Validated @RequestBody SysUser user)
     {
         userService.checkUserAllowed(user);
-        if (StringUtils.isNotEmpty(user.getPhonenumber())
-                && UserConstants.NOT_UNIQUE.equals(userService.checkPhoneUnique(user)))
-        {
-            return AjaxResult.error(MessageUtils.message("user.update.fail", user.getUserName(), MessageUtils.message("user.phone.exist")));
-        }
-        else if (StringUtils.isNotEmpty(user.getEmail())
-                && UserConstants.NOT_UNIQUE.equals(userService.checkEmailUnique(user)))
-        {
-            return AjaxResult.error(MessageUtils.message("user.update.fail", user.getUserName(), MessageUtils.message("user.email.exist")));
-        }
+//        if (StringUtils.isNotEmpty(user.getPhonenumber())
+//                && UserConstants.NOT_UNIQUE.equals(userService.checkPhoneUnique(user)))
+//        {
+//            return AjaxResult.error(MessageUtils.message("user.update.fail", user.getUserName(), MessageUtils.message("user.phone.exist")));
+//        }
+//        else if (StringUtils.isNotEmpty(user.getEmail())
+//                && UserConstants.NOT_UNIQUE.equals(userService.checkEmailUnique(user)))
+//        {
+//            return AjaxResult.error(MessageUtils.message("user.update.fail", user.getUserName(), MessageUtils.message("user.email.exist")));
+//        }
         user.setUpdateBy(getUsername());
         return toAjax(userService.updateUser(user));
     }
