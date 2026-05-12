@@ -45,6 +45,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+xiaoheDOM
 node_modules
 dist
 dist-ssr
