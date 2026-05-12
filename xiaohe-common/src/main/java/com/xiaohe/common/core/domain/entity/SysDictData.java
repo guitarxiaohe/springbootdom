@@ -44,6 +44,9 @@ public class SysDictData extends BaseEntity
     /** 表格字典样式 */
     private String listClass;
 
+    /** 标签颜色（用于前端渲染字典值颜色） */
+    private String color;
+
     /** 是否默认（Y是 N否） */
     @Excel(name = "是否默认", readConverterExp = "Y=是,N=否")
     private String isDefault;
@@ -129,6 +132,16 @@ public class SysDictData extends BaseEntity
         this.listClass = listClass;
     }
 
+    public String getTagColor()
+    {
+        return color;
+    }
+
+    public void setColor(String color)
+    {
+        this.color = color;
+    }
+
     public boolean getDefault()
     {
         return UserConstants.YES.equals(this.isDefault) ? true : false;
@@ -153,7 +166,7 @@ public class SysDictData extends BaseEntity
     {
         this.status = status;
     }
-    
+
     @Override
     public String toString() {
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
@@ -164,6 +177,7 @@ public class SysDictData extends BaseEntity
             .append("dictType", getDictType())
             .append("cssClass", getCssClass())
             .append("listClass", getListClass())
+            .append("color", getColor())
             .append("isDefault", getIsDefault())
             .append("status", getStatus())
             .append("createBy", getCreateBy())
