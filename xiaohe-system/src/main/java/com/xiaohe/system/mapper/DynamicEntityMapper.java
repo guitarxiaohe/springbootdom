@@ -32,4 +32,11 @@ public interface DynamicEntityMapper
     List<String> selectColumnNames(@Param("tableName") String tableName);
 
     Long selectLastInsertId();
+
+    /**
+     * Delete rows by a single column-value condition.
+     * tableName and column must be white-listed by caller via {@code ^[a-zA-Z0-9_]+$}.
+     */
+    int deleteRowsByColumn(@Param("tableName") String tableName, @Param("column") String column,
+            @Param("value") Object value);
 }

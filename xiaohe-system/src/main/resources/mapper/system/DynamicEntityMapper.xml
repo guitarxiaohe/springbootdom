@@ -87,4 +87,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         select last_insert_id()
     </select>
 
+    <delete id="deleteRowsByColumn">
+        delete from ${tableName} where `${column}` = #{value}
+    </delete>
+
 </mapper>

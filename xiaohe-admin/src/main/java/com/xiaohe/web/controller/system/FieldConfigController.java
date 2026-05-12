@@ -7,7 +7,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -80,7 +79,6 @@ public class FieldConfigController extends BaseController
     public Object listByEntityKey(@PathVariable String entityKey)
     {
         PageDomain pageDomain = TableSupport.buildPageRequest();
-        List<FieldConfig> visibleFieldConfigs = selectVisibleFieldConfigs(entityKey);
         if (StringUtils.isNotNull(pageDomain.getPageNum()) && StringUtils.isNotNull(pageDomain.getPageSize()))
         {
             String orderBy = "";
@@ -94,12 +92,12 @@ public class FieldConfigController extends BaseController
             }
             List<Map<String, Object>> rows = dynamicEntityDataService.selectEntityRowList(entityKey,
                     pageDomain.getPageNum(), pageDomain.getPageSize(), orderBy, pageDomain.getReasonable());
-            retainVisibleRowColumns(rows, visibleFieldConfigs);
-            enrichDynamicRows(rows, visibleFieldConfigs);
+            enrichDynamicRows(entityKey, rows);
             return getDataTable(rows);
         }
-        operatorUserFillService.fillAuditUsers(visibleFieldConfigs);
-        return AjaxResult.success(visibleFieldConfigs);
+        List<FieldConfig> list = fieldConfigService.selectFieldConfigByEntityKey(entityKey);
+        operatorUserFillService.fillAuditUsers(list);
+        return AjaxResult.success(list);
     }
 
     /**
@@ -259,56 +257,13 @@ public class FieldConfigController extends BaseController
         {
             return;
         }
-        List<FieldConfig> fieldConfigs = selectVisibleFieldConfigs(entityKey);
-        enrichDynamicRows(rows, fieldConfigs);
-    }
-
-    private void enrichDynamicRows(List<Map<String, Object>> rows, List<FieldConfig> fieldConfigs)
-    {
+        List<FieldConfig> fieldConfigs = fieldConfigService.selectFieldConfigByEntityKey(entityKey);
         if (fieldConfigs == null || fieldConfigs.isEmpty())
         {
             return;
         }
         attachAuditUsers(rows, fieldConfigs);
         attachFileInfos(rows, fieldConfigs);
-    }
-
-    private List<FieldConfig> selectVisibleFieldConfigs(String entityKey)
-    {
-        FieldConfig query = new FieldConfig();
-        query.setEntityKey(entityKey);
-        query.setIsVisible(1);
-        return fieldConfigService.selectFieldConfigList(query);
-    }
-
-    private void retainVisibleRowColumns(List<Map<String, Object>> rows, List<FieldConfig> fieldConfigs)
-    {
-        if (rows == null || rows.isEmpty())
-        {
-            return;
-        }
-        Set<String> visibleKeys = new LinkedHashSet<>();
-        visibleKeys.add("id");
-        if (fieldConfigs != null)
-        {
-            for (FieldConfig fieldConfig : fieldConfigs)
-            {
-                if (fieldConfig == null || StringUtils.isEmpty(fieldConfig.getFieldKey()))
-                {
-                    continue;
-                }
-                visibleKeys.add(fieldConfig.getFieldKey());
-                visibleKeys.add(StringUtils.toCamelCase(fieldConfig.getFieldKey()));
-            }
-        }
-        for (Map<String, Object> row : rows)
-        {
-            if (row == null || row.isEmpty())
-            {
-                continue;
-            }
-            row.entrySet().removeIf(entry -> !visibleKeys.contains(entry.getKey()));
-        }
     }
 
     private void attachAuditUsers(List<Map<String, Object>> rows, List<FieldConfig> fieldConfigs)
