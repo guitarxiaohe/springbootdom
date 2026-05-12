@@ -35,6 +35,8 @@ import com.xiaohe.generator.mapper.GenTableMapper;
 import com.xiaohe.generator.util.GenUtils;
 import com.xiaohe.generator.util.VelocityInitializer;
 import com.xiaohe.generator.util.VelocityUtils;
+import com.xiaohe.system.mapper.FieldConfigMapper;
+import com.xiaohe.system.domain.FieldConfig;
 
 /**
  * 业务 服务层实现
@@ -51,6 +53,9 @@ public class GenTableServiceImpl implements IGenTableService
 
     @Autowired
     private GenTableColumnMapper genTableColumnMapper;
+
+    @Autowired
+    private FieldConfigMapper fieldConfigMapper;
 
     /**
      * 查询业务信息
@@ -161,6 +166,9 @@ public class GenTableServiceImpl implements IGenTableService
         String operName = SecurityUtils.getUsername();
         try
         {
+            // 加载 field_config 知识库：field_key → 已有最佳配置
+            Map<String, FieldConfig> fieldConfigKnowledge = buildFieldConfigKnowledge();
+
             for (GenTable table : tableList)
             {
                 String tableName = table.getTableName();
@@ -172,7 +180,7 @@ public class GenTableServiceImpl implements IGenTableService
                     List<GenTableColumn> genTableColumns = genTableColumnMapper.selectDbTableColumnsByName(tableName);
                     for (GenTableColumn column : genTableColumns)
                     {
-                        GenUtils.initColumnField(column, table);
+                        GenUtils.initColumnField(column, table, fieldConfigKnowledge);
                         genTableColumnMapper.insertGenTableColumn(column);
                     }
                 }
@@ -182,6 +190,30 @@ public class GenTableServiceImpl implements IGenTableService
         {
             throw new ServiceException("导入失败：" + e.getMessage());
         }
+    }
+
+    /**
+     * 加载 field_config 知识库，用于代码生成器推断字段配置
+     */
+    private Map<String, FieldConfig> buildFieldConfigKnowledge()
+    {
+        Map<String, FieldConfig> knowledge = new LinkedHashMap<>();
+        try
+        {
+            List<FieldConfig> configs = fieldConfigMapper.selectFieldConfigKnowledgeBase();
+            for (FieldConfig fc : configs)
+            {
+                if (StringUtils.isNotEmpty(fc.getFieldKey()))
+                {
+                    knowledge.putIfAbsent(fc.getFieldKey(), fc);
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            log.warn("加载 field_config 知识库失败，将使用列名推断: {}", e.getMessage());
+        }
+        return knowledge;
     }
 
     /**
@@ -295,10 +327,12 @@ public class GenTableServiceImpl implements IGenTableService
         }
         List<String> dbTableColumnNames = dbTableColumns.stream().map(GenTableColumn::getColumnName).collect(Collectors.toList());
 
+        Map<String, FieldConfig> fieldConfigKnowledge = buildFieldConfigKnowledge();
+
         dbTableColumns.forEach(column -> {
             if (!tableColumnNames.contains(column.getColumnName()))
             {
-                GenUtils.initColumnField(column, table);
+                GenUtils.initColumnField(column, table, fieldConfigKnowledge);
                 genTableColumnMapper.insertGenTableColumn(column);
             }
         });

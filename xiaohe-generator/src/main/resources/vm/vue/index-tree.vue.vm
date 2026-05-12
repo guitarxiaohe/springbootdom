@@ -39,7 +39,7 @@ const SEARCH_FORM_CONFIG = [
         type: '输入框',
         placeholder: '请输入${comment}',
         },
-        #elseif(($column.htmlType == "select" || $column.htmlType == "radio") && "" != $dictType)
+        #elseif(($column.htmlType == "select" || $column.htmlType == "dict") && "" != $dictType)
         {
         label: '${comment}',
         model: '${column.javaField}',
@@ -274,7 +274,7 @@ setFormLoading(true);
 const response = await get${BusinessName}(record.${pkColumn.javaField});
 setFormData(response.data);
 #foreach ($column in $columns)
-    #if($column.htmlType == "checkbox")
+    #if($column.htmlType == "switch")
     if (response.data.${column.javaField}) {
     setFormData(prev => ({
     ...prev,
@@ -320,7 +320,7 @@ setFormLoading(true);
 
 const submitData = { ...formData };
 #foreach ($column in $columns)
-    #if($column.htmlType == "checkbox")
+    #if($column.htmlType == "switch")
     if (Array.isArray(submitData.${column.javaField})) {
     submitData.${column.javaField} = submitData.${column.javaField}.join(',');
     }

@@ -35,6 +35,12 @@
             <artifactId>xiaohe-common</artifactId>
         </dependency>
 
+        <!-- 系统模块（访问 field_config 知识库） -->
+        <dependency>
+            <groupId>com.xiaohe</groupId>
+            <artifactId>xiaohe-system</artifactId>
+        </dependency>
+
     </dependencies>
 
 </project>

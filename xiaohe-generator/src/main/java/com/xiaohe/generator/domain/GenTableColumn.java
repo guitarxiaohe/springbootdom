@@ -65,6 +65,12 @@ public class GenTableColumn extends BaseEntity
     /** 字典类型 */
     private String dictType;
 
+    /** 关联实体 key（下拉选择器关联的实体） */
+    private String selectEntityKey;
+
+    /** 字段角色：createUser / updateUser / fileInfo */
+    private String fieldRole;
+
     /** 排序 */
     private Integer sort;
 
@@ -311,6 +317,26 @@ public class GenTableColumn extends BaseEntity
     public String getDictType()
     {
         return dictType;
+    }
+
+    public void setSelectEntityKey(String selectEntityKey)
+    {
+        this.selectEntityKey = selectEntityKey;
+    }
+
+    public String getSelectEntityKey()
+    {
+        return selectEntityKey;
+    }
+
+    public void setFieldRole(String fieldRole)
+    {
+        this.fieldRole = fieldRole;
+    }
+
+    public String getFieldRole()
+    {
+        return fieldRole;
     }
 
     public void setSort(Integer sort)

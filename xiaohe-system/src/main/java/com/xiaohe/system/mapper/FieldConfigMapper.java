@@ -104,4 +104,10 @@ public interface FieldConfigMapper
      * 校验指定 id 集合是否都属于同一个 entity_key
      */
     int countFieldConfigByEntityKeyAndIds(@Param("entityKey") String entityKey, @Param("ids") List<Long> ids);
+
+    /**
+     * 查询字段配置知识库：按 field_key 分组，取最新且非空的 field_type / field_role / dict_code / select_entity_key
+     * 供代码生成器导入表时推断字段配置
+     */
+    List<FieldConfig> selectFieldConfigKnowledgeBase();
 }

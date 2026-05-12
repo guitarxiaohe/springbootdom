@@ -45,15 +45,36 @@ public class GenConstants
             "bit", "bigint", "float", "double", "decimal" };
 
     /** 页面不需要编辑字段 */
-    public static final String[] COLUMNNAME_NOT_EDIT = { "id", "create_by", "create_time", "del_flag" };
+    public static final String[] COLUMNNAME_NOT_EDIT = { "id", "create_by", "created_by", "create_time", "created_time", "del_flag" };
 
     /** 页面不需要显示的列表字段 */
-    public static final String[] COLUMNNAME_NOT_LIST = { "id", "create_by", "create_time", "del_flag", "update_by",
-            "update_time" };
+    public static final String[] COLUMNNAME_NOT_LIST = { "id", "create_by", "created_by", "create_time", "created_time", "del_flag", "update_by",
+            "updated_by", "update_time", "updated_time" };
 
     /** 页面不需要查询字段 */
-    public static final String[] COLUMNNAME_NOT_QUERY = { "id", "create_by", "create_time", "del_flag", "update_by",
-            "update_time", "remark" };
+    public static final String[] COLUMNNAME_NOT_QUERY = { "id", "create_by", "created_by", "create_time", "created_time", "del_flag", "update_by",
+            "updated_by", "update_time", "updated_time", "remark" };
+
+    /** 状态字段 → 字典 type */
+    public static final String[] STATUS_COLUMNS = { "status", "del_flag", "visible" };
+
+    /** 字典类型映射：column_name → dict_code */
+    public static final String[][] DICT_COLUMN_MAP = {
+        { "status", "sys_normal_disable" },
+        { "sex", "sys_user_sex" },
+        { "del_flag", "sys_del_flag" },
+        { "visible", "sys_show_hide" },
+        { "notice_type", "sys_notice_type" },
+        { "job_group", "sys_job_group" },
+        { "job_status", "sys_job_status" },
+        { "dict_class", "sys_dict_class" },
+    };
+
+    /** 用户选择器字段 */
+    public static final String[] USER_SELECT_COLUMNS = { "user_id", "assignee", "operator" };
+
+    /** 文件关联字段 */
+    public static final String[] FILE_COLUMNS = { "avatar", "file_id" };
 
     /** Entity基类字段 */
     public static final String[] BASE_ENTITY = { "createBy", "createTime", "updateBy", "updateTime", "remark" };
@@ -70,23 +91,29 @@ public class GenConstants
     /** 下拉框 */
     public static final String HTML_SELECT = "select";
 
-    /** 单选框 */
-    public static final String HTML_RADIO = "radio";
-
-    /** 复选框 */
-    public static final String HTML_CHECKBOX = "checkbox";
+    /** 字典下拉框 */
+    public static final String HTML_DICT = "dict";
 
     /** 日期控件 */
+    public static final String HTML_DATE = "date";
+
+    /** 日期时间控件 */
     public static final String HTML_DATETIME = "datetime";
 
-    /** 图片上传控件 */
-    public static final String HTML_IMAGE_UPLOAD = "imageUpload";
+    /** 数字控件 */
+    public static final String HTML_NUMBER = "number";
 
-    /** 文件上传控件 */
-    public static final String HTML_FILE_UPLOAD = "fileUpload";
+    /** 开关控件 */
+    public static final String HTML_SWITCH = "switch";
 
-    /** 富文本控件 */
-    public static final String HTML_EDITOR = "editor";
+    /** 文件上传控件（关联 SysFileInfo） */
+    public static final String HTML_FILE = "file";
+
+    /** 审计人控件 */
+    public static final String HTML_BY = "by";
+
+    /** 用户选择控件 */
+    public static final String HTML_USER = "user";
 
     /** 字符串类型 */
     public static final String TYPE_STRING = "String";

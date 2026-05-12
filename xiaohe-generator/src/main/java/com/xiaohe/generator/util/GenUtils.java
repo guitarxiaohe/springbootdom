@@ -1,12 +1,14 @@
 package com.xiaohe.generator.util;
 
 import java.util.Arrays;
+import java.util.Map;
 import org.apache.commons.lang3.RegExUtils;
 import com.xiaohe.common.constant.GenConstants;
 import com.xiaohe.common.utils.StringUtils;
 import com.xiaohe.generator.config.GenConfig;
 import com.xiaohe.generator.domain.GenTable;
 import com.xiaohe.generator.domain.GenTableColumn;
+import com.xiaohe.system.domain.FieldConfig;
 
 /**
  * 代码生成器 工具类
@@ -30,22 +32,28 @@ public class GenUtils
     }
 
     /**
-     * 初始化列属性字段
+     * 初始化列属性字段（对齐 field_config 字段类型体系）
+     * @param column 列信息
+     * @param table 表信息
+     * @param fieldConfigKnowledge field_config 知识库（field_key → 最佳配置），优先于硬编码推断
      */
-    public static void initColumnField(GenTableColumn column, GenTable table)
+    public static void initColumnField(GenTableColumn column, GenTable table, Map<String, FieldConfig> fieldConfigKnowledge)
     {
         String dataType = getDbType(column.getColumnType());
         String columnName = column.getColumnName();
+        // 查找 field_config 知识库中该列名的已有配置
+        FieldConfig knownConfig = fieldConfigKnowledge != null ? fieldConfigKnowledge.get(columnName) : null;
         column.setTableId(table.getTableId());
         column.setCreateBy(table.getCreateBy());
-        // 设置java字段名
+        // 设置java字段名（驼峰）
         column.setJavaField(StringUtils.toCamelCase(columnName));
         // 设置默认类型
         column.setJavaType(GenConstants.TYPE_STRING);
 
+        // ======== 字段类型判定（字段配置体系：input/number/textarea/select/dict/date/datetime/switch/file/by/user） ========
+
         if (arraysContains(GenConstants.COLUMNTYPE_STR, dataType) || arraysContains(GenConstants.COLUMNTYPE_TEXT, dataType))
         {
-            // 字符串长度超过500设置为文本域
             Integer columnLength = getColumnLength(column.getColumnType());
             String htmlType = columnLength >= 500 || arraysContains(GenConstants.COLUMNTYPE_TEXT, dataType) ? GenConstants.HTML_TEXTAREA : GenConstants.HTML_INPUT;
             column.setHtmlType(htmlType);
@@ -53,80 +61,173 @@ public class GenUtils
         else if (arraysContains(GenConstants.COLUMNTYPE_TIME, dataType))
         {
             column.setJavaType(GenConstants.TYPE_DATE);
-            column.setHtmlType(GenConstants.HTML_DATETIME);
+            // 区分 date 与 datetime
+            column.setHtmlType("date".equalsIgnoreCase(dataType) ? GenConstants.HTML_DATE : GenConstants.HTML_DATETIME);
         }
         else if (arraysContains(GenConstants.COLUMNTYPE_NUMBER, dataType))
         {
-            column.setHtmlType(GenConstants.HTML_INPUT);
+            column.setHtmlType(GenConstants.HTML_NUMBER);
 
-            // 如果是浮点型 统一用BigDecimal
             String[] str = StringUtils.split(StringUtils.substringBetween(column.getColumnType(), "(", ")"), ",");
             if (str != null && str.length == 2 && Integer.parseInt(str[1]) > 0)
             {
                 column.setJavaType(GenConstants.TYPE_BIGDECIMAL);
             }
-            // 如果是整形
             else if (str != null && str.length == 1 && Integer.parseInt(str[0]) <= 10)
             {
                 column.setJavaType(GenConstants.TYPE_INTEGER);
             }
-            // 长整形
             else
             {
                 column.setJavaType(GenConstants.TYPE_LONG);
             }
         }
 
-        // 插入字段（默认所有字段都需要插入）
+        // ======== 字段配置推断：优先 field_config 知识库，fallback 到列名语义 ========
+
+        // 优先：使用 field_config 中该列名的已有配置
+        if (knownConfig != null)
+        {
+            if (StringUtils.isNotEmpty(knownConfig.getFieldType()))
+            {
+                column.setHtmlType(knownConfig.getFieldType());
+            }
+            if (StringUtils.isNotEmpty(knownConfig.getFieldRole()))
+            {
+                column.setFieldRole(knownConfig.getFieldRole());
+            }
+            if (StringUtils.isNotEmpty(knownConfig.getDictCode()))
+            {
+                column.setDictType(knownConfig.getDictCode());
+            }
+            if (StringUtils.isNotEmpty(knownConfig.getSelectEntityKey()))
+            {
+                column.setSelectEntityKey(knownConfig.getSelectEntityKey());
+            }
+
+            // field_role = createUser/updateUser → 不允许编辑
+            if ("createUser".equals(knownConfig.getFieldRole())
+                    || "updateUser".equals(knownConfig.getFieldRole()))
+            {
+                column.setIsEdit("0");
+            }
+        }
+        else
+        {
+            // Fallback：列名语义推断（仅知识库中找不到时使用）
+            if (isStatusColumn(columnName))
+            {
+                column.setHtmlType(GenConstants.HTML_DICT);
+                column.setDictType(getDictCodeForColumn(columnName));
+            }
+            else if (StringUtils.endsWithIgnoreCase(columnName, "type")
+                    || StringUtils.endsWithIgnoreCase(columnName, "sex"))
+            {
+                column.setHtmlType(GenConstants.HTML_DICT);
+                column.setDictType(getDictCodeForColumn(columnName));
+            }
+            else if (arraysContains(GenConstants.USER_SELECT_COLUMNS, columnName))
+            {
+                column.setHtmlType(GenConstants.HTML_USER);
+            }
+            else if (arraysContains(GenConstants.FILE_COLUMNS, columnName)
+                    || StringUtils.endsWithIgnoreCase(columnName, "avatar")
+                    || StringUtils.endsWithIgnoreCase(columnName, "_file_id"))
+            {
+                column.setHtmlType(GenConstants.HTML_FILE);
+            }
+            else if (StringUtils.endsWithIgnoreCase(columnName, "content")
+                    || StringUtils.endsWithIgnoreCase(columnName, "remark")
+                    || StringUtils.endsWithIgnoreCase(columnName, "description")
+                    || StringUtils.endsWithIgnoreCase(columnName, "message"))
+            {
+                column.setHtmlType(GenConstants.HTML_TEXTAREA);
+            }
+        }
+
+        // ======== 插入/编辑/列表/查询标记 ========
+
         column.setIsInsert(GenConstants.REQUIRE);
 
-        // 编辑字段
         if (!arraysContains(GenConstants.COLUMNNAME_NOT_EDIT, columnName) && !column.isPk())
         {
             column.setIsEdit(GenConstants.REQUIRE);
         }
-        // 列表字段
         if (!arraysContains(GenConstants.COLUMNNAME_NOT_LIST, columnName) && !column.isPk())
         {
             column.setIsList(GenConstants.REQUIRE);
         }
-        // 查询字段
         if (!arraysContains(GenConstants.COLUMNNAME_NOT_QUERY, columnName) && !column.isPk())
         {
             column.setIsQuery(GenConstants.REQUIRE);
         }
 
-        // 查询字段类型
-        if (StringUtils.endsWithIgnoreCase(columnName, "name"))
+        // ======== 查询方式 ========
+
+        if (StringUtils.endsWithIgnoreCase(columnName, "name")
+                || StringUtils.endsWithIgnoreCase(columnName, "title")
+                || StringUtils.endsWithIgnoreCase(columnName, "key"))
         {
             column.setQueryType(GenConstants.QUERY_LIKE);
         }
-        // 状态字段设置单选框
-        if (StringUtils.endsWithIgnoreCase(columnName, "status"))
+        // 日期字段 → 查询用 BETWEEN
+        if (GenConstants.HTML_DATE.equals(column.getHtmlType())
+                || GenConstants.HTML_DATETIME.equals(column.getHtmlType()))
         {
-            column.setHtmlType(GenConstants.HTML_RADIO);
+            column.setQueryType("BETWEEN");
         }
-        // 类型&性别字段设置下拉框
-        else if (StringUtils.endsWithIgnoreCase(columnName, "type")
-                || StringUtils.endsWithIgnoreCase(columnName, "sex"))
+
+        // ======== 字段角色（优先使用知识库配置，仅 file 类型补充推断） ========
+
+        // 文件关联字段 → field_role = fileInfo（知识库无此字段时补充）
+        if (GenConstants.HTML_FILE.equals(column.getHtmlType())
+                && StringUtils.isEmpty(column.getFieldRole()))
         {
-            column.setHtmlType(GenConstants.HTML_SELECT);
+            column.setFieldRole("fileInfo");
         }
-        // 图片字段设置图片上传控件
-        else if (StringUtils.endsWithIgnoreCase(columnName, "image"))
+
+        // ======== 关联实体 key（优先使用知识库配置，仅 select 型补充推断） ========
+
+        // 已由知识库设置了 selectEntityKey → 跳过
+        // 未设置时，对常见 FK 列名做 fallback 推断
+        if (StringUtils.isEmpty(column.getSelectEntityKey()))
         {
-            column.setHtmlType(GenConstants.HTML_IMAGE_UPLOAD);
+            if ("parent_id".equalsIgnoreCase(columnName) && !"dept".equalsIgnoreCase(table.getTableName()))
+            {
+                column.setSelectEntityKey("dept");
+            }
+            else if ("dept_id".equalsIgnoreCase(columnName) && !"dept".equalsIgnoreCase(table.getTableName()))
+            {
+                column.setSelectEntityKey("dept");
+            }
         }
-        // 文件字段设置文件上传控件
-        else if (StringUtils.endsWithIgnoreCase(columnName, "file"))
+    }
+
+    // 判断是否为状态字段
+    private static boolean isStatusColumn(String columnName)
+    {
+        for (String col : GenConstants.STATUS_COLUMNS)
         {
-            column.setHtmlType(GenConstants.HTML_FILE_UPLOAD);
+            if (StringUtils.endsWithIgnoreCase(columnName, col))
+            {
+                return true;
+            }
         }
-        // 内容字段设置富文本控件
-        else if (StringUtils.endsWithIgnoreCase(columnName, "content"))
+        return false;
+    }
+
+    // 获取字段对应的字典代码
+    private static String getDictCodeForColumn(String columnName)
+    {
+        for (String[] pair : GenConstants.DICT_COLUMN_MAP)
         {
-            column.setHtmlType(GenConstants.HTML_EDITOR);
+            if (columnName.equalsIgnoreCase(pair[0]))
+            {
+                return pair[1];
+            }
         }
+        // 默认兜底
+        return "sys_normal_disable";
     }
 
     /**

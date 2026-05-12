@@ -172,4 +172,19 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach>
     </select>
 
+<!-- 代码生成器字段配置知识库：按 field_key 去重，选取非空配置 -->
+    <select id="selectFieldConfigKnowledgeBase" resultMap="FieldConfigResult">
+        select field_key,
+               any_value(field_type) as field_type,
+               any_value(field_role) as field_role,
+               any_value(dict_code) as dict_code,
+               any_value(select_entity_key) as select_entity_key
+        from field_config
+        where (field_type is not null and field_type != '')
+           or (field_role is not null and field_role != '')
+           or (dict_code is not null and dict_code != '')
+           or (select_entity_key is not null and select_entity_key != '')
+        group by field_key
+    </select>
+
 </mapper>
