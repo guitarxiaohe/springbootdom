@@ -243,8 +243,7 @@ public class DynamicExcelService
                         Object pkValue = rowData.remove(pkColumn);
                         if (pkValue != null)
                         {
-                            Map<String, Object> existing = dynamicEntityMapper.selectEntityRowById(
-                                    tableName, pkColumn, toLong(pkValue));
+                            Map<String, Object> existing = dynamicEntityMapper.selectEntityRowById(tableName, pkColumn, toLong(pkValue), tableName + ".*");
                             List<DynamicEntityColumnValue> values = buildWriteValues(rowData, actualColumns,
                                     pkColumn);
                             if (existing != null && !existing.isEmpty())
