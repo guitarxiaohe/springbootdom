@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS `field_config` (
     `created_time` bigint DEFAULT NULL COMMENT '创建时间戳',
     `updated_by` bigint DEFAULT NULL COMMENT '修改人',
     `updated_time` bigint DEFAULT NULL COMMENT '修改时间戳',
+    `fixed` varchar(10) DEFAULT NULL COMMENT '固定列: left/right/null',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_entity_field` (`entity_key`,`field_key`),
     KEY `idx_entity_key` (`entity_key`)
@@ -55,7 +56,9 @@ INSERT INTO entity_config (entity_key, entity_name, table_name, description, sor
 ('post', '岗位', 'sys_post', '岗位管理', 13, UNIX_TIMESTAMP() * 1000),
 ('noteCategory', '笔记分类', 'sys_note_category', '笔记分类管理', 14, UNIX_TIMESTAMP() * 1000),
 ('note', '笔记', 'sys_note', '笔记管理', 15, UNIX_TIMESTAMP() * 1000),
-('project', '项目', 'project_info', '项目管理', 16, UNIX_TIMESTAMP() * 1000)
+('project', '项目', 'project_info', '项目管理', 16, UNIX_TIMESTAMP() * 1000),
+('fieldConfig', '字段配置', 'field_config', '字段配置管理', 17, UNIX_TIMESTAMP() * 1000),
+('entity', '实体配置', 'entity_config', '实体配置管理', 18, UNIX_TIMESTAMP() * 1000)
 ON DUPLICATE KEY UPDATE entity_name = VALUES(entity_name);
 
 -- 使用存储过程批量插入字段配置
