@@ -76,8 +76,9 @@ public class DynamicEntityDataServiceImpl implements IDynamicEntityDataService
         Map<String, FieldFilterMeta> metaByKey = buildFieldMetaByKey(entityKey);
         Map<String, String> fieldKeyAliases = buildFieldKeyAliases(metaByKey.keySet());
         Map<String, DynamicEntityRowFilter> filterMap = buildFilterMap(metaByKey, fieldKeyAliases);
+        String columns = buildVisibleColumnList(entityKey, ec.getTableName());
         List<LinkedHashMap<String, Object>> rows = dynamicEntityMapper.selectEntityRowList(ec.getTableName(),
-                new ArrayList<>(filterMap.values()));
+                new ArrayList<>(filterMap.values()), columns);
         return convertRowsToCamelCase(rows);
     }
 
@@ -93,9 +94,10 @@ public class DynamicEntityDataServiceImpl implements IDynamicEntityDataService
         Map<String, FieldFilterMeta> metaByKey = buildFieldMetaByKey(entityKey);
         Map<String, String> fieldKeyAliases = buildFieldKeyAliases(metaByKey.keySet());
         Map<String, DynamicEntityRowFilter> filterMap = buildFilterMap(metaByKey, fieldKeyAliases);
+        String columns = buildVisibleColumnList(entityKey, ec.getTableName());
         PageHelper.startPage(pageNum, pageSize, orderBy).setReasonable(reasonable);
         List<LinkedHashMap<String, Object>> rows = dynamicEntityMapper.selectEntityRowList(ec.getTableName(),
-                new ArrayList<>(filterMap.values()));
+                new ArrayList<>(filterMap.values()), columns);
         return convertRowsToCamelCase(rows);
     }
 
@@ -108,7 +110,45 @@ public class DynamicEntityDataServiceImpl implements IDynamicEntityDataService
         }
         EntityConfig ec = requireEntityConfig(entityKey);
         String pkColumn = requirePrimaryKeyColumn(ec.getTableName());
-        return convertRowToCamelCase(dynamicEntityMapper.selectEntityRowById(ec.getTableName(), pkColumn, id));
+        String columns = buildVisibleColumnList(entityKey, ec.getTableName());
+        return convertRowToCamelCase(dynamicEntityMapper.selectEntityRowById(ec.getTableName(), pkColumn, id, columns));
+    }
+
+    /**
+     * 从 field_config 构建列表查询字段白名单（is_visible=1 的 field_key 集合）
+     */
+    private String buildVisibleColumnList(String entityKey, String tableName)
+    {
+        try
+        {
+            com.xiaohe.system.domain.FieldConfig queryConfig = new com.xiaohe.system.domain.FieldConfig();
+            queryConfig.setEntityKey(entityKey);
+            List<com.xiaohe.system.domain.FieldConfig> configs = fieldConfigMapper.selectFieldConfigList(queryConfig);
+            if (configs == null || configs.isEmpty())
+            {
+                return tableName + ".*";
+            }
+            StringBuilder sb = new StringBuilder();
+            for (com.xiaohe.system.domain.FieldConfig fc : configs)
+            {
+                if (fc.getIsVisible() != null && fc.getIsVisible() == 1 && StringUtils.isNotEmpty(fc.getFieldKey()))
+                {
+                    if (sb.length() > 0) sb.append(", ");
+                    String fieldKey = fc.getFieldKey().replaceAll("[^a-zA-Z0-9_]", "");
+                    sb.append("`").append(fieldKey).append("`");
+                }
+            }
+            if (sb.length() == 0)
+            {
+                return tableName + ".*";
+            }
+            return sb.toString();
+        }
+        catch (Exception e)
+        {
+            // fallback: 出错时返回整表列
+            return tableName + ".*";
+        }
     }
 
     @Override

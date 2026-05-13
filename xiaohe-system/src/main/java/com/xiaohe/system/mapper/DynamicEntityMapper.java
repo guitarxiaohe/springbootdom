@@ -14,10 +14,12 @@ import com.xiaohe.system.domain.DynamicEntityRowFilter;
 public interface DynamicEntityMapper
 {
     List<LinkedHashMap<String, Object>> selectEntityRowList(@Param("tableName") String tableName,
-            @Param("filters") List<DynamicEntityRowFilter> filters);
+            @Param("filters") List<DynamicEntityRowFilter> filters,
+            @Param("columns") String columns);
 
     LinkedHashMap<String, Object> selectEntityRowById(@Param("tableName") String tableName,
-            @Param("pkColumn") String pkColumn, @Param("id") Long id);
+            @Param("pkColumn") String pkColumn, @Param("id") Long id,
+            @Param("columns") String columns);
 
     int deleteEntityRowsByIds(@Param("tableName") String tableName, @Param("pkColumn") String pkColumn,
             @Param("ids") Long[] ids);

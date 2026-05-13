@@ -2,11 +2,13 @@ package com.xiaohe.web.controller.system;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -32,6 +34,9 @@ import com.xiaohe.cms.fileInfo.domain.SysFileInfo;
 import com.xiaohe.cms.fileInfo.service.ISysFileInfoService;
 import com.xiaohe.system.domain.FieldConfig;
 import com.xiaohe.system.domain.FieldConfigSortRequest;
+import com.xiaohe.system.domain.EntityConfig;
+import com.xiaohe.system.mapper.EntityConfigMapper;
+import com.xiaohe.system.service.ISysDictTypeService;
 import com.xiaohe.system.service.IDynamicEntityDataService;
 import com.xiaohe.system.service.IFieldConfigService;
 import com.xiaohe.system.service.IOperatorUserFillService;
@@ -57,6 +62,12 @@ public class FieldConfigController extends BaseController
     @Autowired
     private ISysFileInfoService sysFileInfoService;
 
+    @Autowired
+    private ISysDictTypeService dictTypeService;
+
+    @Autowired
+    private EntityConfigMapper entityConfigMapper;
+
     /**
      * 查询字段配置列表
      */
@@ -74,7 +85,7 @@ public class FieldConfigController extends BaseController
      * By entityKey: without pageNum/pageSize returns field_config rows;
      * with pagination resolves table via entity_config and returns business rows (query params and dataParams keys must be field_config.field_key).
      */
-    @PreAuthorize("@ss.hasPermi('system:fieldConfig:list')")
+    @PreAuthorize("@ss.hasPermi('system:dynamic:entity:list')")
     @GetMapping("/listByEntityKey/{entityKey}")
     public Object listByEntityKey(@PathVariable String entityKey)
     {
@@ -103,7 +114,7 @@ public class FieldConfigController extends BaseController
     /**
      * Delete business rows by primary key id (comma-separated); table from entity_config.
      */
-    @PreAuthorize("@ss.hasPermi('system:fieldConfig:remove')")
+    @PreAuthorize("@ss.hasPermi('system:dynamic:entity:remove')")
     @Log(title = "Dynamic entity rows", businessType = BusinessType.DELETE)
     @DeleteMapping("/delete/{entityKey}/{ids}")
     public AjaxResult deleteEntityRows(@PathVariable String entityKey, @PathVariable String ids)
@@ -131,7 +142,7 @@ public class FieldConfigController extends BaseController
     /**
      * 查询单条业务数据
      */
-    @PreAuthorize("@ss.hasPermi('system:fieldConfig:query')")
+    @PreAuthorize("@ss.hasPermi('system:dynamic:entity:query')")
     @GetMapping("/data/{entityKey}/{id}")
     public AjaxResult getEntityRow(@PathVariable String entityKey, @PathVariable Long id)
     {
@@ -143,7 +154,7 @@ public class FieldConfigController extends BaseController
     /**
      * 新增业务数据
      */
-    @PreAuthorize("@ss.hasPermi('system:fieldConfig:add')")
+    @PreAuthorize("@ss.hasPermi('system:dynamic:entity:add')")
     @Log(title = "Dynamic entity row", businessType = BusinessType.INSERT)
     @PostMapping("/data/{entityKey}")
     public AjaxResult addEntityRow(@PathVariable String entityKey, @RequestBody Map<String, Object> data)
@@ -154,7 +165,7 @@ public class FieldConfigController extends BaseController
     /**
      * 修改业务数据
      */
-    @PreAuthorize("@ss.hasPermi('system:fieldConfig:edit')")
+    @PreAuthorize("@ss.hasPermi('system:dynamic:entity:edit')")
     @Log(title = "Dynamic entity row", businessType = BusinessType.UPDATE)
     @PutMapping("/data/{entityKey}/{id}")
     public AjaxResult editEntityRow(@PathVariable String entityKey, @PathVariable Long id,
@@ -166,7 +177,7 @@ public class FieldConfigController extends BaseController
     /**
      * 删除单条业务数据
      */
-    @PreAuthorize("@ss.hasPermi('system:fieldConfig:remove')")
+    @PreAuthorize("@ss.hasPermi('system:dynamic:entity:remove')")
     @Log(title = "Dynamic entity row", businessType = BusinessType.DELETE)
     @DeleteMapping("/data/{entityKey}/{id}")
     public AjaxResult deleteEntityRow(@PathVariable String entityKey, @PathVariable Long id)
@@ -177,7 +188,7 @@ public class FieldConfigController extends BaseController
     /**
      * 根据实体标识和字段标识查询字段配置
      */
-    @PreAuthorize("@ss.hasPermi('system:fieldConfig:query')")
+    @PreAuthorize("@ss.hasPermi('system:dynamic:entity:query')")
     @GetMapping("/getByEntityKeyAndFieldKey/{entityKey}/{fieldKey}")
     public AjaxResult getByEntityKeyAndFieldKey(@PathVariable String entityKey, @PathVariable String fieldKey)
     {
@@ -212,6 +223,8 @@ public class FieldConfigController extends BaseController
     @PostMapping
     public AjaxResult add(@Validated @RequestBody FieldConfig fieldConfig)
     {
+        String error = validateFieldConfig(fieldConfig);
+        if (error != null) return AjaxResult.error(error);
         fieldConfig.setCreatedBy(getUserId());
         fieldConfig.setCreatedTime(System.currentTimeMillis());
         return toAjax(fieldConfigService.insertFieldConfig(fieldConfig));
@@ -225,6 +238,8 @@ public class FieldConfigController extends BaseController
     @PutMapping
     public AjaxResult edit(@Validated @RequestBody FieldConfig fieldConfig)
     {
+        String error = validateFieldConfig(fieldConfig);
+        if (error != null) return AjaxResult.error(error);
         fieldConfig.setUpdatedBy(getUserId());
         return toAjax(fieldConfigService.updateFieldConfig(fieldConfig));
     }
@@ -249,6 +264,72 @@ public class FieldConfigController extends BaseController
     public AjaxResult updateSort(@RequestBody FieldConfigSortRequest request)
     {
         return toAjax(fieldConfigService.updateSortBatch(request.getEntityKey(), request.getItems(), getUserId()));
+    }
+
+    
+    /******************************** field_config 一致性校验 ********************************/
+    
+    private static final Set<String> VALID_FIELD_TYPES = Collections.unmodifiableSet(
+        new LinkedHashSet<>(Arrays.asList(
+            "input", "number", "textarea", "select", "dict", "date", "datetime", "switch", "file", "by", "user"
+        ))
+    );
+    private static final Set<String> VALID_FIELD_ROLES = Collections.unmodifiableSet(
+        new LinkedHashSet<>(Arrays.asList(
+            "createUser", "updateUser", "fileInfo", ""
+        ))
+    );
+
+    private String validateFieldConfig(FieldConfig fc)
+    {
+        if (fc == null) return "fieldConfig is null";
+        
+        // field_type 必须是合法值
+        if (StringUtils.isNotEmpty(fc.getFieldType()) && !VALID_FIELD_TYPES.contains(fc.getFieldType().trim()))
+        {
+            return "field_type '" + fc.getFieldType() + "' 不合法，允许值: " + String.join(",", VALID_FIELD_TYPES);
+        }
+        
+        // field_role 必须是合法值
+        if (StringUtils.isNotEmpty(fc.getFieldRole()) && !VALID_FIELD_ROLES.contains(fc.getFieldRole().trim()))
+        {
+            return "field_role '" + fc.getFieldRole() + "' 不合法，允许值: createUser, updateUser, fileInfo";
+        }
+        
+        // dict 类型必须指定 dict_code
+        if ("dict".equalsIgnoreCase(fc.getFieldType()) && StringUtils.isEmpty(fc.getDictCode()))
+        {
+            return "field_type=dict 时必须填写 dict_code";
+        }
+        
+        // dict_code 必须存在于 sys_dict_type
+        if (StringUtils.isNotEmpty(fc.getDictCode()))
+        {
+            try
+            {
+                com.xiaohe.common.core.domain.entity.SysDictType dictType = dictTypeService.selectDictTypeByType(fc.getDictCode().trim());
+                if (dictType == null)
+                {
+                    return "dict_code '" + fc.getDictCode() + "' 在 sys_dict_type 中不存在";
+                }
+            }
+            catch (Exception e)
+            {
+                return "dict_code 校验异常: " + e.getMessage();
+            }
+        }
+        
+        // select_entity_key 必须存在于 entity_config
+        if (StringUtils.isNotEmpty(fc.getSelectEntityKey()))
+        {
+            EntityConfig ec = entityConfigMapper.selectEntityConfigByEntityKey(fc.getSelectEntityKey().trim());
+            if (ec == null)
+            {
+                return "select_entity_key '" + fc.getSelectEntityKey() + "' 在 entity_config 中不存在";
+            }
+        }
+        
+        return null;
     }
 
     private void enrichDynamicRows(String entityKey, List<Map<String, Object>> rows)
