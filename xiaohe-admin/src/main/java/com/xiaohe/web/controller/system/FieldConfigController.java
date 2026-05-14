@@ -227,7 +227,9 @@ public class FieldConfigController extends BaseController
         if (error != null) return AjaxResult.error(error);
         fieldConfig.setCreatedBy(getUserId());
         fieldConfig.setCreatedTime(System.currentTimeMillis());
-        return toAjax(fieldConfigService.insertFieldConfig(fieldConfig));
+        int rows = fieldConfigService.insertFieldConfig(fieldConfig);
+        dynamicEntityDataService.evictMetadataCache(fieldConfig.getEntityKey());
+        return toAjax(rows);
     }
 
     /**
@@ -241,7 +243,9 @@ public class FieldConfigController extends BaseController
         String error = validateFieldConfig(fieldConfig);
         if (error != null) return AjaxResult.error(error);
         fieldConfig.setUpdatedBy(getUserId());
-        return toAjax(fieldConfigService.updateFieldConfig(fieldConfig));
+        int rows = fieldConfigService.updateFieldConfig(fieldConfig);
+        dynamicEntityDataService.evictMetadataCache(fieldConfig.getEntityKey());
+        return toAjax(rows);
     }
 
     /**

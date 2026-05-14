@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Date;
+import java.util.concurrent.ConcurrentHashMap;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -58,6 +59,56 @@ public class DynamicEntityDataServiceImpl implements IDynamicEntityDataService
 
     @Autowired
     private DynamicEntityMapper dynamicEntityMapper;
+
+    /******************************** 元数据缓存 ********************************/
+
+    private static final long CACHE_TTL_MS = 60_000; // 1 分钟
+    private static class CacheEntry<T> { final T value; final long expireAt; CacheEntry(T v) { this.value = v; this.expireAt = System.currentTimeMillis() + CACHE_TTL_MS; } boolean expired() { return System.currentTimeMillis() > expireAt; } }
+    private final ConcurrentHashMap<String, CacheEntry<EntityConfig>> entityConfigCache = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, CacheEntry<List<com.xiaohe.system.domain.FieldConfig>>> fieldConfigCache = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, CacheEntry<String>> pkColumnCache = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, CacheEntry<Set<String>>> columnNamesCache = new ConcurrentHashMap<>();
+
+    private EntityConfig getCachedEntityConfig(String entityKey) {
+        CacheEntry<EntityConfig> entry = entityConfigCache.get(entityKey);
+        if (entry != null && !entry.expired()) return entry.value;
+        EntityConfig ec = entityConfigMapper.selectEntityConfigByEntityKey(entityKey);
+        if (ec != null) entityConfigCache.put(entityKey, new CacheEntry<>(ec));
+        return ec;
+    }
+
+    private List<com.xiaohe.system.domain.FieldConfig> getCachedFieldConfigs(String entityKey) {
+        CacheEntry<List<com.xiaohe.system.domain.FieldConfig>> entry = fieldConfigCache.get(entityKey);
+        if (entry != null && !entry.expired()) return entry.value;
+        com.xiaohe.system.domain.FieldConfig query = new com.xiaohe.system.domain.FieldConfig();
+        query.setEntityKey(entityKey);
+        List<com.xiaohe.system.domain.FieldConfig> list = fieldConfigMapper.selectFieldConfigList(query);
+        fieldConfigCache.put(entityKey, new CacheEntry<>(list != null ? list : Collections.emptyList()));
+        return list;
+    }
+
+    private String getCachedPkColumn(String tableName) {
+        CacheEntry<String> entry = pkColumnCache.get(tableName);
+        if (entry != null && !entry.expired()) return entry.value;
+        String pk = dynamicEntityMapper.selectPrimaryKeyColumn(tableName);
+        if (pk != null) pkColumnCache.put(tableName, new CacheEntry<>(pk));
+        return pk;
+    }
+
+    private Set<String> getCachedColumnNames(String tableName) {
+        CacheEntry<Set<String>> entry = columnNamesCache.get(tableName);
+        if (entry != null && !entry.expired()) return entry.value;
+        List<String> cols = dynamicEntityMapper.selectColumnNames(tableName);
+        Set<String> set = cols != null ? new LinkedHashSet<>(cols) : Collections.emptySet();
+        columnNamesCache.put(tableName, new CacheEntry<>(set));
+        return set;
+    }
+
+    // 清除元数据缓存（field_config/entity_config 变更后调用）
+    public void evictMetadataCache(String entityKey) {
+        entityConfigCache.remove(entityKey);
+        fieldConfigCache.remove(entityKey);
+    }
 
     @Override
     public boolean isAllowedOrderColumn(String entityKey, String columnUnderScore)
@@ -121,9 +172,7 @@ public class DynamicEntityDataServiceImpl implements IDynamicEntityDataService
     {
         try
         {
-            com.xiaohe.system.domain.FieldConfig queryConfig = new com.xiaohe.system.domain.FieldConfig();
-            queryConfig.setEntityKey(entityKey);
-            List<com.xiaohe.system.domain.FieldConfig> configs = fieldConfigMapper.selectFieldConfigList(queryConfig);
+            List<com.xiaohe.system.domain.FieldConfig> configs = getCachedFieldConfigs(entityKey);
             if (configs == null || configs.isEmpty())
             {
                 return tableName + ".*";
@@ -457,7 +506,7 @@ public class DynamicEntityDataServiceImpl implements IDynamicEntityDataService
 
     private EntityConfig requireEntityConfig(String entityKey)
     {
-        EntityConfig ec = entityConfigMapper.selectEntityConfigByEntityKey(entityKey);
+        EntityConfig ec = getCachedEntityConfig(entityKey);
         if (ec == null || StringUtils.isEmpty(ec.getTableName()))
         {
             throw new ServiceException("Unknown entity_key: " + entityKey);
@@ -471,7 +520,7 @@ public class DynamicEntityDataServiceImpl implements IDynamicEntityDataService
 
     private String requirePrimaryKeyColumn(String tableName)
     {
-        String pkColumn = dynamicEntityMapper.selectPrimaryKeyColumn(tableName);
+        String pkColumn = getCachedPkColumn(tableName);
         if (!isSafeIdentifier(pkColumn))
         {
             throw new ServiceException("Primary key not found for table: " + tableName);
