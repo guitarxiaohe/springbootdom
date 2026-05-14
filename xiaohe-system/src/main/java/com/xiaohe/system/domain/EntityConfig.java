@@ -17,6 +17,8 @@ public class EntityConfig implements Serializable
 
     private String entityName;
 
+    private String labelKey;
+
     private String tableName;
 
     private String description;
@@ -61,6 +63,16 @@ public class EntityConfig implements Serializable
     public void setEntityName(String entityName)
     {
         this.entityName = entityName;
+    }
+
+    public String getLabelKey()
+    {
+        return labelKey;
+    }
+
+    public void setLabelKey(String labelKey)
+    {
+        this.labelKey = labelKey;
     }
 
     public String getTableName()

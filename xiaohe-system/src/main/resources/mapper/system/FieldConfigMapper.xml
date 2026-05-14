@@ -9,6 +9,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="entityKey" column="entity_key"/>
         <result property="fieldKey" column="field_key"/>
         <result property="fieldName" column="field_name"/>
+		<result property="labelKey"  column="label_key" />
         <result property="fieldType" column="field_type"/>
         <result property="fieldRole" column="field_role"/>
         <result property="dictCode" column="dict_code"/>
@@ -94,6 +95,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="entityKey != null and entityKey != ''">entity_key,</if>
             <if test="fieldKey != null and fieldKey != ''">field_key,</if>
             <if test="fieldName != null and fieldName != ''">field_name,</if>
+            <if test="labelKey != null and labelKey != ''">label_key,</if>
             <if test="fieldType != null and fieldType != ''">field_type,</if>
             <if test="fieldRole != null and fieldRole != ''">field_role,</if>
             <if test="dictCode != null and dictCode != ''">dict_code,</if>
@@ -108,6 +110,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="entityKey != null and entityKey != ''">#{entityKey},</if>
             <if test="fieldKey != null and fieldKey != ''">#{fieldKey},</if>
             <if test="fieldName != null and fieldName != ''">#{fieldName},</if>
+            <if test="labelKey != null and labelKey != ''">#{labelKey},</if>
             <if test="fieldType != null and fieldType != ''">#{fieldType},</if>
             <if test="fieldRole != null and fieldRole != ''">#{fieldRole},</if>
             <if test="dictCode != null and dictCode != ''">#{dictCode},</if>
@@ -127,6 +130,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="entityKey != null and entityKey != ''">entity_key = #{entityKey},</if>
             <if test="fieldKey != null and fieldKey != ''">field_key = #{fieldKey},</if>
             <if test="fieldName != null and fieldName != ''">field_name = #{fieldName},</if>
+			<if test="labelKey != null">label_key = #{labelKey},</if>
             <if test="fieldType != null">field_type = #{fieldType},</if>
             <if test="fieldRole != null">field_role = #{fieldRole},</if>
             <if test="dictCode != null">dict_code = #{dictCode},</if>

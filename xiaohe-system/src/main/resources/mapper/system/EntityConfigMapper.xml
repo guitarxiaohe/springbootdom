@@ -19,7 +19,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <select id="selectEntityConfigByEntityKey" parameterType="String" resultMap="EntityConfigResult">
-        select id, entity_key, entity_name, table_name, description, sort, is_visible,
+        select id, entity_key, entity_name, label_key, table_name, description, sort, is_visible,
                created_by, created_time, updated_by, updated_time
         from entity_config
         where entity_key = #{entityKey}

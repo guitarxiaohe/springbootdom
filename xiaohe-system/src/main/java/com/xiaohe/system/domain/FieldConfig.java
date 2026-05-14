@@ -27,6 +27,8 @@ public class FieldConfig extends BaseEntity implements AuditUserAttachable
 
     private String fieldName;
 
+    private String labelKey;
+
     private String fieldType;
 
     private String fieldRole;
