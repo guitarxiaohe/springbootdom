@@ -25,4 +25,7 @@ public interface IDynamicEntityDataService
 
     Map<String, Object> updateEntityRow(String entityKey, Long id, Map<String, Object> data, String operatorUserName,
             Long operatorUserId);
+
+    // 清除元数据缓存（field_config/entity_config 变更后调用）
+    void evictMetadataCache(String entityKey);
 }
