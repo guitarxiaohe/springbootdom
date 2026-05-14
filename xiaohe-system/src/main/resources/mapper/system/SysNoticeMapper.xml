@@ -39,6 +39,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 			<if test="createBy != null and createBy != ''">
 				AND create_by like concat('%', #{createBy}, '%')
 			</if>
+			<if test="params.beginTime != null">
+				AND create_time &gt;= #{params.beginTime}
+			</if>
+			<if test="status != null and status != ''">
+				AND status = #{status}
+			</if>
 		</where>
     </select>
     

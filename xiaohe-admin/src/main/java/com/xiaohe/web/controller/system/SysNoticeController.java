@@ -1,6 +1,10 @@
 package com.xiaohe.web.controller.system;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -17,6 +21,7 @@ import com.xiaohe.common.core.controller.BaseController;
 import com.xiaohe.common.core.domain.AjaxResult;
 import com.xiaohe.common.core.page.TableDataInfo;
 import com.xiaohe.common.enums.BusinessType;
+import com.xiaohe.common.utils.DateUtils;
 import com.xiaohe.system.domain.SysNotice;
 import com.xiaohe.system.service.ISysNoticeService;
 
@@ -42,6 +47,29 @@ public class SysNoticeController extends BaseController
         startPage();
         List<SysNotice> list = noticeService.selectNoticeList(notice);
         return getDataTable(list);
+    }
+
+    /**
+     * 获取最近一周内的通知公告（无需权限，用于首页滚动播报）
+     */
+    @GetMapping("/recent")
+    public AjaxResult recentNotices()
+    {
+        SysNotice notice = new SysNotice();
+        notice.setStatus("0");
+        Map<String, Object> params = new HashMap<>();
+        params.put("beginTime", DateUtils.addDays(new java.util.Date(), -7));
+        notice.setParams(params);
+        List<SysNotice> list = noticeService.selectNoticeList(notice);
+        List<Map<String, Object>> result = list.stream().map(n -> {
+            Map<String, Object> item = new HashMap<>();
+            item.put("noticeId", n.getNoticeId());
+            item.put("noticeTitle", n.getNoticeTitle());
+            item.put("noticeType", n.getNoticeType());
+            item.put("createTime", n.getCreateTime());
+            return item;
+        }).collect(Collectors.toList());
+        return AjaxResult.success(result);
     }
 
     /**

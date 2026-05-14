@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaohe.system.mapper.SysWsMsgLogMapper">
+
+    <resultMap type="SysWsMsgLog" id="SysWsMsgLogResult">
+        <result property="msgId"         column="msg_id"         />
+        <result property="msgType"       column="msg_type"       />
+        <result property="title"         column="title"          />
+        <result property="content"       column="content"        />
+        <result property="path"          column="path"           />
+        <result property="queryParams"   column="params"         />
+        <result property="targetUserId"  column="target_user_id" />
+        <result property="sendStatus"    column="send_status"    />
+        <result property="sendTime"      column="send_time"      />
+        <result property="createBy"      column="create_by"      />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"      column="update_by"      />
+        <result property="updateTime"    column="update_time"    />
+        <result property="remark"        column="remark"         />
+    </resultMap>
+
+    <sql id="selectWsMsgLogVo">
+        select msg_id, msg_type, title, content, path, params, target_user_id, send_status, send_time, create_by, create_time, update_by, update_time, remark
+        from sys_ws_msg_log
+    </sql>
+
+    <select id="selectWsMsgLogById" parameterType="Long" resultMap="SysWsMsgLogResult">
+        <include refid="selectWsMsgLogVo"/>
+        where msg_id = #{msgId}
+    </select>
+
+    <select id="selectWsMsgLogList" parameterType="SysWsMsgLog" resultMap="SysWsMsgLogResult">
+        <include refid="selectWsMsgLogVo"/>
+        <where>
+            <if test="msgType != null and msgType != ''">
+                AND msg_type = #{msgType}
+            </if>
+            <if test="title != null and title != ''">
+                AND title like concat('%', #{title}, '%')
+            </if>
+            <if test="targetUserId != null">
+                AND (target_user_id = #{targetUserId} OR target_user_id is null)
+            </if>
+            <if test="sendStatus != null and sendStatus != ''">
+                AND send_status = #{sendStatus}
+            </if>
+            <if test="params.beginTime != null">
+                AND create_time &gt;= #{params.beginTime}
+            </if>
+        </where>
+        order by create_time desc
+    </select>
+
+    <select id="selectRecentLogs" resultMap="SysWsMsgLogResult">
+        <include refid="selectWsMsgLogVo"/>
+        where (target_user_id = #{targetUserId} OR target_user_id is null)
+        order by create_time desc
+        limit #{limit}
+    </select>
+
+    <insert id="insertWsMsgLog" parameterType="SysWsMsgLog" useGeneratedKeys="true" keyProperty="msgId">
+        insert into sys_ws_msg_log (
+            msg_type,
+            title,
+            content,
+            path,
+            params,
+            target_user_id,
+            send_status,
+            <if test="sendTime != null">send_time,</if>
+            <if test="createBy != null and createBy != ''">create_by,</if>
+            create_time
+        ) values (
+            #{msgType},
+            #{title},
+            #{content},
+            #{path},
+            #{queryParams},
+            #{targetUserId},
+            #{sendStatus},
+            <if test="sendTime != null">#{sendTime},</if>
+            <if test="createBy != null and createBy != ''">#{createBy},</if>
+            sysdate()
+        )
+    </insert>
+
+    <update id="updateWsMsgLog" parameterType="SysWsMsgLog">
+        update sys_ws_msg_log
+        <set>
+            <if test="sendStatus != null and sendStatus != ''">send_status = #{sendStatus}, </if>
+            <if test="sendTime != null">send_time = #{sendTime}, </if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy}, </if>
+            update_time = sysdate()
+        </set>
+        where msg_id = #{msgId}
+    </update>
+
+    <delete id="deleteWsMsgLogById" parameterType="Long">
+        delete from sys_ws_msg_log where msg_id = #{msgId}
+    </delete>
+
+    <delete id="deleteWsMsgLogByIds" parameterType="Long">
+        delete from sys_ws_msg_log where msg_id in
+        <foreach item="msgId" collection="array" open="(" separator="," close=")">
+            #{msgId}
+        </foreach>
+    </delete>
+
+</mapper>

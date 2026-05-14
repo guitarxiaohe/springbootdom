@@ -4,6 +4,7 @@ import com.xiaohe.web.utils.WxUtils;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
@@ -16,6 +17,7 @@ import java.util.TimeZone;
  * @author xiaohe
  */
 //@ComponentScan("com.xiaohe")
+@EnableScheduling
 @SpringBootApplication(exclude = { DataSourceAutoConfiguration.class })
 public class XiaoHeApplication
 {

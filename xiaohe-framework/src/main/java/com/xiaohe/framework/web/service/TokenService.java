@@ -203,6 +203,31 @@ public class TokenService
     }
 
     /**
+     * 根据token字符串获取登录用户信息（用于WebSocket等非HTTP场景）
+     *
+     * @param token JWT token字符串
+     * @return 登录用户信息
+     */
+    public LoginUser getLoginUserByToken(String token)
+    {
+        if (StringUtils.isNotEmpty(token))
+        {
+            try
+            {
+                Claims claims = parseToken(token);
+                String uuid = (String) claims.get(Constants.LOGIN_USER_KEY);
+                String userKey = getTokenKey(uuid);
+                LoginUser user = redisCache.getCacheObject(userKey);
+                return user;
+            }
+            catch (Exception e)
+            {
+            }
+        }
+        return null;
+    }
+
+    /**
      * 获取请求token
      *
      * @param request
