@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
+import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.xiaohe.common.exception.ServiceException;
 import com.xiaohe.common.utils.ServletUtils;
@@ -416,13 +417,29 @@ public class DynamicEntityDataServiceImpl implements IDynamicEntityDataService
         return filter;
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     private List<Map<String, Object>> convertRowsToCamelCase(List<LinkedHashMap<String, Object>> rows)
     {
-        List<Map<String, Object>> result = new ArrayList<>();
         if (rows == null || rows.isEmpty())
         {
+            return new ArrayList<>();
+        }
+        // 保留 PageHelper 的 Page 元数据（total 等），避免 getDataTable 拿不到 total
+        if (rows instanceof Page)
+        {
+            @SuppressWarnings("rawtypes")
+            Page page = (Page) rows;
+            Page<Map<String, Object>> result = new Page<>(page.getPageNum(), page.getPageSize());
+            result.setTotal(page.getTotal());
+            for (Object item : page)
+            {
+                @SuppressWarnings("unchecked")
+                LinkedHashMap<String, Object> row = (LinkedHashMap<String, Object>) item;
+                result.add(convertRowToCamelCase(row));
+            }
             return result;
         }
+        List<Map<String, Object>> result = new ArrayList<>();
         for (Map<String, Object> row : rows)
         {
             result.add(convertRowToCamelCase(row));
