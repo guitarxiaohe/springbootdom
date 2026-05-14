@@ -47,6 +47,9 @@ public class SysDictData extends BaseEntity
     /** 标签颜色（用于前端渲染字典值颜色） */
     private String color;
 
+    /** 语义色槽: primary/success/danger/warning/info（自动适配主题） */
+    private String semanticColor;
+
     /** 是否默认（Y是 N否） */
     @Excel(name = "是否默认", readConverterExp = "Y=是,N=否")
     private String isDefault;
@@ -132,7 +135,7 @@ public class SysDictData extends BaseEntity
         this.listClass = listClass;
     }
 
-    public String getTagColor()
+    public String getColor()
     {
         return color;
     }
@@ -140,6 +143,16 @@ public class SysDictData extends BaseEntity
     public void setColor(String color)
     {
         this.color = color;
+    }
+
+    public String getSemanticColor()
+    {
+        return semanticColor;
+    }
+
+    public void setSemanticColor(String semanticColor)
+    {
+        this.semanticColor = semanticColor;
     }
 
     public boolean getDefault()
