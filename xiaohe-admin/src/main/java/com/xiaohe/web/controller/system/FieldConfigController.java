@@ -270,7 +270,6 @@ public class FieldConfigController extends BaseController
         return toAjax(fieldConfigService.updateSortBatch(request.getEntityKey(), request.getItems(), getUserId()));
     }
 
-    
     /******************************** field_config 一致性校验 ********************************/
     
     private static final Set<String> VALID_FIELD_TYPES = Collections.unmodifiableSet(
