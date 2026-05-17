@@ -84,8 +84,9 @@ public class DynamicEntityDataServiceImpl implements IDynamicEntityDataService
         com.xiaohe.system.domain.FieldConfig query = new com.xiaohe.system.domain.FieldConfig();
         query.setEntityKey(entityKey);
         List<com.xiaohe.system.domain.FieldConfig> list = fieldConfigMapper.selectFieldConfigList(query);
-        fieldConfigCache.put(entityKey, new CacheEntry<>(list != null ? list : Collections.emptyList()));
-        return list;
+        List<com.xiaohe.system.domain.FieldConfig> safeList = list != null ? list : Collections.emptyList();
+        fieldConfigCache.put(entityKey, new CacheEntry<>(safeList));
+        return safeList;
     }
 
     private String getCachedPkColumn(String tableName) {
@@ -128,7 +129,7 @@ public class DynamicEntityDataServiceImpl implements IDynamicEntityDataService
         Map<String, FieldFilterMeta> metaByKey = buildFieldMetaByKey(entityKey);
         Map<String, String> fieldKeyAliases = buildFieldKeyAliases(metaByKey.keySet());
         Map<String, DynamicEntityRowFilter> filterMap = buildFilterMap(metaByKey, fieldKeyAliases);
-        String columns = buildVisibleColumnList(entityKey, ec.getTableName());
+        String columns = buildReadableColumnList(entityKey, ec.getTableName(), requirePrimaryKeyColumn(ec.getTableName()));
         List<LinkedHashMap<String, Object>> rows = dynamicEntityMapper.selectEntityRowList(ec.getTableName(),
                 new ArrayList<>(filterMap.values()), columns);
         return convertRowsToCamelCase(rows);
@@ -146,7 +147,7 @@ public class DynamicEntityDataServiceImpl implements IDynamicEntityDataService
         Map<String, FieldFilterMeta> metaByKey = buildFieldMetaByKey(entityKey);
         Map<String, String> fieldKeyAliases = buildFieldKeyAliases(metaByKey.keySet());
         Map<String, DynamicEntityRowFilter> filterMap = buildFilterMap(metaByKey, fieldKeyAliases);
-        String columns = buildVisibleColumnList(entityKey, ec.getTableName());
+        String columns = buildReadableColumnList(entityKey, ec.getTableName(), requirePrimaryKeyColumn(ec.getTableName()));
         PageHelper.startPage(pageNum, pageSize, orderBy).setReasonable(reasonable);
         List<LinkedHashMap<String, Object>> rows = dynamicEntityMapper.selectEntityRowList(ec.getTableName(),
                 new ArrayList<>(filterMap.values()), columns);
@@ -162,43 +163,79 @@ public class DynamicEntityDataServiceImpl implements IDynamicEntityDataService
         }
         EntityConfig ec = requireEntityConfig(entityKey);
         String pkColumn = requirePrimaryKeyColumn(ec.getTableName());
-        String columns = buildVisibleColumnList(entityKey, ec.getTableName());
+        String columns = buildReadableColumnList(entityKey, ec.getTableName(), pkColumn);
         return convertRowToCamelCase(dynamicEntityMapper.selectEntityRowById(ec.getTableName(), pkColumn, id, columns));
     }
 
     /**
-     * 从 field_config 构建列表查询字段白名单（is_visible=1 的 field_key 集合）
+     * 从 field_config 构建动态查询字段白名单。
      */
-    private String buildVisibleColumnList(String entityKey, String tableName)
+    private String buildReadableColumnList(String entityKey, String tableName, String pkColumn)
     {
-        try
+        List<com.xiaohe.system.domain.FieldConfig> configs = getCachedFieldConfigs(entityKey);
+        if (configs == null || configs.isEmpty())
         {
-            List<com.xiaohe.system.domain.FieldConfig> configs = getCachedFieldConfigs(entityKey);
-            if (configs == null || configs.isEmpty())
-            {
-                return tableName + ".*";
-            }
-            StringBuilder sb = new StringBuilder();
-            for (com.xiaohe.system.domain.FieldConfig fc : configs)
-            {
-                if (fc.getIsVisible() != null && fc.getIsVisible() == 1 && StringUtils.isNotEmpty(fc.getFieldKey()))
-                {
-                    if (sb.length() > 0) sb.append(", ");
-                    String fieldKey = fc.getFieldKey().replaceAll("[^a-zA-Z0-9_]", "");
-                    sb.append("`").append(fieldKey).append("`");
-                }
-            }
-            if (sb.length() == 0)
-            {
-                return tableName + ".*";
-            }
-            return sb.toString();
+            throw new ServiceException("No field_config found for entity_key: " + entityKey);
         }
-        catch (Exception e)
+        Set<String> actualColumns = getCachedColumnNames(tableName);
+        LinkedHashSet<String> readableColumns = new LinkedHashSet<>();
+        appendReadableColumn(readableColumns, actualColumns, pkColumn);
+        for (com.xiaohe.system.domain.FieldConfig fc : configs)
         {
-            // fallback: 出错时返回整表列
-            return tableName + ".*";
+            if (!isReadableField(fc))
+            {
+                continue;
+            }
+            appendReadableColumn(readableColumns, actualColumns, fc.getFieldKey());
         }
+        if (readableColumns.isEmpty())
+        {
+            throw new ServiceException("No readable columns configured for entity_key: " + entityKey);
+        }
+        StringBuilder sb = new StringBuilder();
+        for (String column : readableColumns)
+        {
+            if (sb.length() > 0)
+            {
+                sb.append(", ");
+            }
+            sb.append("`").append(column).append("`");
+        }
+        return sb.toString();
+    }
+
+    /**
+     * 判断字段是否需要被动态查询读取。
+     */
+    private boolean isReadableField(com.xiaohe.system.domain.FieldConfig fc)
+    {
+        if (fc == null || StringUtils.isEmpty(fc.getFieldKey()))
+        {
+            return false;
+        }
+        if (fc.getIsVisible() != null && fc.getIsVisible() == 1)
+        {
+            return true;
+        }
+        String fieldType = StringUtils.trim(fc.getFieldType());
+        String fieldRole = StringUtils.trim(fc.getFieldRole());
+        return "by".equalsIgnoreCase(fieldType)
+                || "file".equalsIgnoreCase(fieldType)
+                || "createUser".equalsIgnoreCase(fieldRole)
+                || "updateUser".equalsIgnoreCase(fieldRole)
+                || "fileInfo".equalsIgnoreCase(fieldRole);
+    }
+
+    /**
+     * 追加经过物理表列校验的安全列名。
+     */
+    private void appendReadableColumn(Set<String> readableColumns, Set<String> actualColumns, String column)
+    {
+        if (StringUtils.isEmpty(column) || !isSafeIdentifier(column) || !actualColumns.contains(column))
+        {
+            return;
+        }
+        readableColumns.add(column);
     }
 
     @Override

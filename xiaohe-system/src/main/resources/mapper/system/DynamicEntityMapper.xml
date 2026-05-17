@@ -5,11 +5,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 <mapper namespace="com.xiaohe.system.mapper.DynamicEntityMapper">
 
     <select id="selectEntityRowList" resultType="java.util.LinkedHashMap">
-        select
-        <choose>
-            <when test="columns != null and columns != ''">${columns}</when>
-            <otherwise>${tableName}.*</otherwise>
-        </choose>
+        select ${columns}
         from ${tableName}
         <where>
             <foreach collection="filters" item="item">
@@ -35,11 +31,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
 
     <select id="selectEntityRowById" resultType="java.util.LinkedHashMap">
-        select
-        <choose>
-            <when test="columns != null and columns != ''">${columns}</when>
-            <otherwise>${tableName}.*</otherwise>
-        </choose>
+        select ${columns}
         from ${tableName} where `${pkColumn}` = #{id} limit 1
     </select>
 

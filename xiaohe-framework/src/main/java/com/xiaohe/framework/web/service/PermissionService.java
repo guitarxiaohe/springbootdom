@@ -47,6 +47,26 @@ public class PermissionService
     }
 
     /**
+     * 验证动态实体权限，优先匹配实体自身权限，兼容动态实体统一权限。
+     *
+     * @param entityKey 实体标识
+     * @param action 操作标识
+     * @return 用户是否具备动态实体权限
+     */
+    public boolean hasEntityPermi(String entityKey, String action)
+    {
+        if (StringUtils.isEmpty(entityKey) || StringUtils.isEmpty(action))
+        {
+            return false;
+        }
+        String normalizedEntityKey = StringUtils.trim(entityKey);
+        String normalizedAction = StringUtils.trim(action);
+        return hasPermi("system:" + normalizedEntityKey + ":" + normalizedAction)
+                || hasPermi("system:dynamic:entity:" + normalizedAction)
+                || hasPermi("system:fieldConfig:" + normalizedAction);
+    }
+
+    /**
      * 验证用户是否不具备某权限，与 hasPermi逻辑相反
      *
      * @param permission 权限字符串

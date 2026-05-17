@@ -32,7 +32,7 @@ public class DynamicExcelController extends BaseController
     /**
      * 导出实体数据为 Excel。
      */
-    @PreAuthorize("@ss.hasPermi('system:fieldConfig:export')")
+    @PreAuthorize("@ss.hasEntityPermi(#entityKey, 'export')")
     @Log(title = "动态实体导出", businessType = BusinessType.EXPORT)
     @GetMapping("/export/{entityKey}")
     public void export(@PathVariable String entityKey, HttpServletResponse response) throws Exception
@@ -43,7 +43,7 @@ public class DynamicExcelController extends BaseController
     /**
      * 下载导入模板（仅表头 + 示例行）。
      */
-    @PreAuthorize("@ss.hasPermi('system:fieldConfig:import')")
+    @PreAuthorize("@ss.hasEntityPermi(#entityKey, 'import')")
     @Log(title = "动态实体模板", businessType = BusinessType.EXPORT)
     @GetMapping("/template/{entityKey}")
     public void downloadTemplate(@PathVariable String entityKey, HttpServletResponse response) throws Exception
@@ -59,7 +59,7 @@ public class DynamicExcelController extends BaseController
      * @param mode      导入模式：create（默认）、update、upsert
      * @param children  子表卸除 JSON 参数，格式：[{"tableName":"xx","childKey":"parent_id","parentValue":123}]
      */
-    @PreAuthorize("@ss.hasPermi('system:fieldConfig:import')")
+    @PreAuthorize("@ss.hasEntityPermi(#entityKey, 'import')")
     @Log(title = "动态实体导入", businessType = BusinessType.IMPORT)
     @PostMapping("/import/{entityKey}")
     public AjaxResult importData(@PathVariable String entityKey,
